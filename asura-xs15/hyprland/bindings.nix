@@ -13,7 +13,7 @@ in
         "SUPER, H, exit"
         "SUPER, F, exec, asura-file-manager \"$HOME\""
         "SUPER, G, togglefloating"
-        "SUPER, J, togglesplit"
+        "SUPER, J, layoutmsg, togglesplit"
         "SUPER, B, exec, ${browser}"
         "SUPER, T, exec, ${terminal}"
         "SUPER, C, exec, ${editor}"

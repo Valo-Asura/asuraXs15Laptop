@@ -120,9 +120,9 @@ in
   ];
 
   boot = {
-    consoleLogLevel = 3;
+    consoleLogLevel = 4;
     initrd = {
-      verbose = false;
+      verbose = true;
       stage1Greeting = "";
     };
 
@@ -156,13 +156,12 @@ in
     kernelPackages = pkgs.linuxPackages_latest;
 
     kernelParams = [
-      "quiet"
       "splash"
-      "loglevel=3"
-      "rd.systemd.show_status=auto"
-      "systemd.show_status=auto"
-      "rd.udev.log_level=3"
-      "udev.log_level=3"
+      "loglevel=4"
+      "rd.systemd.show_status=true"
+      "systemd.show_status=true"
+      "rd.udev.log_level=info"
+      "udev.log_level=info"
       "vt.global_cursor_default=0"
       "video=eDP-1:1920x1080@144"
       "nowatchdog"
@@ -170,6 +169,20 @@ in
       "split_lock_detect=off"
       "cryptomgr.notests"
     ];
+  };
+
+  specialisation.rescue-no-nvidia.configuration = {
+    boot = {
+      plymouth.enable = lib.mkForce false;
+      kernelParams = [
+        "systemd.unit=multi-user.target"
+        "plymouth.enable=0"
+        "modprobe.blacklist=nvidia,nvidia_drm,nvidia_modeset,nvidia_uvm"
+        "rd.systemd.show_status=true"
+        "systemd.show_status=true"
+        "loglevel=6"
+      ];
+    };
   };
 
   system.activationScripts.createSbctlKeys.text = ''
@@ -188,30 +201,30 @@ in
   '';
 
   system.activationScripts.syncWindowsBootEntry.text = ''
-    windows_esp="/dev/disk/by-partuuid/${windowsEspPartUuid}"
-    mount_dir="$(${pkgs.coreutils}/bin/mktemp -d)"
+        windows_esp="/dev/disk/by-partuuid/${windowsEspPartUuid}"
+        mount_dir="$(${pkgs.coreutils}/bin/mktemp -d)"
 
-    if [ -d /boot/loader/entries ]; then
-      ${pkgs.coreutils}/bin/rm -f /boot/loader/entries/*[Aa]tlas*.conf
-    fi
+        if [ -d /boot/loader/entries ]; then
+          ${pkgs.coreutils}/bin/rm -f /boot/loader/entries/*[Aa]tlas*.conf
+        fi
 
-    cleanup() {
-      ${pkgs.util-linux}/bin/umount "$mount_dir" >/dev/null 2>&1 || true
-      ${pkgs.coreutils}/bin/rmdir "$mount_dir" >/dev/null 2>&1 || true
-    }
-    trap cleanup EXIT
+        cleanup() {
+          ${pkgs.util-linux}/bin/umount "$mount_dir" >/dev/null 2>&1 || true
+          ${pkgs.coreutils}/bin/rmdir "$mount_dir" >/dev/null 2>&1 || true
+        }
+        trap cleanup EXIT
 
-    if [ -e "$windows_esp" ] && ${pkgs.util-linux}/bin/mount -o ro "$windows_esp" "$mount_dir" >/dev/null 2>&1; then
-      if [ -f "$mount_dir/EFI/Microsoft/Boot/bootmgfw.efi" ]; then
-        ${pkgs.coreutils}/bin/mkdir -p /boot/EFI/Microsoft /boot/loader/entries
-        ${pkgs.coreutils}/bin/rm -rf /boot/EFI/Microsoft/Boot
-        ${pkgs.coreutils}/bin/cp -a "$mount_dir/EFI/Microsoft/Boot" /boot/EFI/Microsoft/Boot
-        ${pkgs.coreutils}/bin/cat > /boot/loader/entries/windows.conf <<'EOF'
-title Windows Boot Manager
-efi /EFI/Microsoft/Boot/bootmgfw.efi
-sort-key z_windows
-EOF
-      fi
-    fi
+        if [ -e "$windows_esp" ] && ${pkgs.util-linux}/bin/mount -o ro "$windows_esp" "$mount_dir" >/dev/null 2>&1; then
+          if [ -f "$mount_dir/EFI/Microsoft/Boot/bootmgfw.efi" ]; then
+            ${pkgs.coreutils}/bin/mkdir -p /boot/EFI/Microsoft /boot/loader/entries
+            ${pkgs.coreutils}/bin/rm -rf /boot/EFI/Microsoft/Boot
+            ${pkgs.coreutils}/bin/cp -a "$mount_dir/EFI/Microsoft/Boot" /boot/EFI/Microsoft/Boot
+            ${pkgs.coreutils}/bin/cat > /boot/loader/entries/windows.conf <<'EOF'
+    title Windows Boot Manager
+    efi /EFI/Microsoft/Boot/bootmgfw.efi
+    sort-key z_windows
+    EOF
+          fi
+        fi
   '';
 }

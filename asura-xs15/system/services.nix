@@ -8,6 +8,15 @@
 {
   systemd.services.mongodb.wantedBy = lib.mkForce [ ];
 
+  # systemd-user can deadlock on this laptop when pam_systemd tries to open a
+  # second logind session for the user manager. When it times out, boot waits
+  # 90s and nixos-rebuild switch cannot reload user units.
+  security.pam.services.systemd-user.startSession = lib.mkForce false;
+  systemd.services."user@" = {
+    environment.XDG_RUNTIME_DIR = "/run/user/%i";
+    serviceConfig.TimeoutStartSec = "25s";
+  };
+
   services = {
     blueman = {
       enable = true;

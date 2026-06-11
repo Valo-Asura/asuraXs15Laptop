@@ -37,6 +37,12 @@ let
   asuraWallpaperPanel = pkgs.writeShellScriptBin "asura-wallpaper-panel" ''
     set -euo pipefail
 
+    if command -v skwd >/dev/null 2>&1; then
+      if skwd wall toggle; then
+        exit 0
+      fi
+    fi
+
     exec noctalia msg panel-toggle wallpaper
   '';
 

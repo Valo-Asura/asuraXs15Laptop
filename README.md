@@ -31,12 +31,12 @@ new commands should use `#asura-xs15`.
 | Lockscreen | Noctalia IPC lock using `screenshots/lockscreen.png`; |
 | File manager | Nautilus, with `DBusActivatable=false` local desktop override |
 | Theme | Dark GTK/libadwaita settings, Papirus-Dark icons, Bibata Classic cursor |
-| Wallpaper | `SUPER+W` runs `asura-wallpaper-panel`, which opens Noctalia's wallpaper panel |
+| Wallpaper | `SUPER+W` runs `asura-wallpaper-panel`; it opens `skwd wall toggle` first, then falls back to Noctalia |
 | Fan control | NBFC-Linux `0.5.2` plus NBFC-GTK `0.4.1` |
 | Fan profile | Declarative two-fan `Colorful X15 AT 22` config with 8-bit `MaxSpeedValue = 255` |
 | Plymouth | Local `circle_hud` theme from `asura-xs15/backup/plymouth/circle_hud` |
 | Kernel | CachyOS `7.0.11` from `nix-cachyos-kernel/release` |
-| Boot GPU policy | Intel `i915` loads in initrd; NVIDIA stays out of initrd and explicit `nvidia-drm.*` boot params |
+| Boot GPU policy | Intel `i915` loads in initrd; NVIDIA stays out of initrd/modules-load and explicit `nvidia-drm.*` boot params |
 | Power | `thermald` plus `tuned`; TLP disabled |
 | Downloads | Xtreme Download Manager GTK `8.0.29` pre-release plus Firefox add-on and `xdm-app:` handlers |
 | AI memory | Shared root at `/home/asura/.config/ai-unified-memory`; facts are system-only |
@@ -48,7 +48,7 @@ rebuild                       # fish alias for sudo nixos-rebuild switch --flake
 nbfc-colorful-verify          # verify selected NBFC config, fan count, and registers
 thermal-status                # temperatures, tuned/thermald/NBFC state
 asura-dark-mode-refresh       # reapply GTK/libadwaita dark settings in the active session
-asura-wallpaper-panel         # same wallpaper workflow as SUPER+W
+asura-wallpaper-panel         # skwd-wall picker first, Noctalia wallpaper panel fallback
 ```
 
 ## Repository Structure
@@ -109,7 +109,11 @@ Important carry-overs:
 - Nautilus is the intended file manager.
 - CachyOS boot hangs were caused by forced early NVIDIA initramfs loading and
   explicit early DRM setup; this config keeps NVIDIA out of
-  `boot.initrd.kernelModules` and removes local `nvidia-drm.*` boot params.
+  `boot.initrd.kernelModules`, keeps NVIDIA out of systemd modules-load, and
+  removes local `nvidia-drm.*` boot params.
+- The `rescue-no-nvidia` boot specialization keeps the old rescue path
+  declarative: multi-user target, Plymouth disabled, and temporary NVIDIA
+  blacklist only for that entry.
 - Lockscreen, wallpaper, launcher, screenshots, clipboard, and session actions
   route through Noctalia IPC.
 - Wofi and Hyprlock are not active modules.

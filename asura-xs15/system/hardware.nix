@@ -6,7 +6,28 @@
   ...
 }:
 
+let
+  earlyNvidiaModules = [
+    "nvidia"
+    "nvidia_drm"
+    "nvidia_modeset"
+    "nvidia_uvm"
+  ];
+  hasEarlyNvidiaModule =
+    modules: builtins.any (module: builtins.elem module earlyNvidiaModules) modules;
+in
 {
+  assertions = [
+    {
+      assertion = !(hasEarlyNvidiaModule config.boot.initrd.kernelModules);
+      message = "Asura XS15: NVIDIA modules must not be loaded from initrd; use the i915 panel path and let PRIME load NVIDIA after real root.";
+    }
+    {
+      assertion = !(hasEarlyNvidiaModule config.boot.kernelModules);
+      message = "Asura XS15: NVIDIA modules must not be loaded through systemd-modules-load; do not recreate the old CachyOS early NVIDIA boot hang.";
+    }
+  ];
+
   hardware = {
     enableRedistributableFirmware = true;
     cpu.intel.updateMicrocode = true;
@@ -61,4 +82,14 @@
   boot.kernelModules = [
     "v4l2loopback"
   ];
+
+  # Empty declarative stubs win over stale imperative Arch/CachyOS-style files
+  # if they ever appear under /etc/modules-load.d. This is not a blacklist:
+  # the NixOS NVIDIA/PRIME stack still loads the driver after real root.
+  environment.etc = {
+    "modules-load.d/nvidia.conf".text = "";
+    "modules-load.d/nvidia-drm.conf".text = "";
+    "modules-load.d/nvidia-modeset.conf".text = "";
+    "modules-load.d/nvidia-uvm.conf".text = "";
+  };
 }

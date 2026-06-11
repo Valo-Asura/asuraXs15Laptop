@@ -64,17 +64,6 @@
   xdg.configFile."gtk-3.0/settings.ini".force = true;
   xdg.configFile."gtk-4.0/settings.ini".force = true;
 
-  home.activation.applyGtkDarkSettings = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-    if command -v gsettings >/dev/null 2>&1; then
-      gsettings set org.gnome.desktop.interface color-scheme prefer-dark || true
-      gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark || true
-      gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark || true
-      gsettings set org.gnome.desktop.interface cursor-theme Bibata-Modern-Classic || true
-      gsettings set org.gnome.desktop.interface cursor-size 18 || true
-    fi
-  '';
-
-
   xdg.configFile."qt5ct/qt5ct.conf" = {
     force = true;
     text = ''

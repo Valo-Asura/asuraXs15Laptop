@@ -21,6 +21,7 @@ let
   startupCommands = [
     "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE XDG_SESSION_CLASS XDG_SESSION_ID XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS"
     "noctalia"
+    "systemctl --user start skwd-daemon.service || skwd-daemon"
     "asura-apply-cursor-theme"
     "asura-monitor-guard --daemon"
     "easyeffects --gapplication-service"
@@ -164,7 +165,6 @@ in
 
       input = {
         kb_layout = keyboardLayout;
-        kb_variant = "eng";
         kb_options = "caps:escape";
         follow_mouse = 1;
         sensitivity = 0.5;
@@ -183,57 +183,29 @@ in
         "3, horizontal, workspace"
       ];
 
-      windowrulev2 = [
-        "float,title:^(.*(Open File|Choose Files|File Upload|Save As|Library).*)$"
-        "center,title:^(.*(Open File|Choose Files|File Upload|Save As|Library).*)$"
-        "size 900 600,title:^(.*(Open File|Choose Files|File Upload|Save As|Library).*)$"
-        "float,title:^(.*(Authentication Required|PolicyKit1).*)$"
-        "center,title:^(.*(Authentication Required|PolicyKit1).*)$"
-        "size 500 400,title:^(.*(Authentication Required|PolicyKit1).*)$"
-        "float,class:^(polkit-gnome-authentication-agent-1|hyprpolkitagent|polkit-kde-authentication-agent-1)$"
-        "center,class:^(polkit-gnome-authentication-agent-1|hyprpolkitagent|polkit-kde-authentication-agent-1)$"
-        "size 500 400,class:^(polkit-gnome-authentication-agent-1|hyprpolkitagent|polkit-kde-authentication-agent-1)$"
-        "float,class:^(org\\.kde\\.ark|ark|file-roller|org\\.gnome\\.FileRoller|xarchiver)$"
-        "center,class:^(org\\.kde\\.ark|ark|file-roller|org\\.gnome\\.FileRoller|xarchiver)$"
-        "size 860 620,class:^(org\\.kde\\.ark|ark|file-roller|org\\.gnome\\.FileRoller|xarchiver)$"
-        "float,class:^(org\\.gnome\\.Loupe|loupe|org\\.kde\\.gwenview|Gwenview)$"
-        "center,class:^(org\\.gnome\\.Loupe|loupe|org\\.kde\\.gwenview|Gwenview)$"
-        "size 980 720,class:^(org\\.gnome\\.Loupe|loupe|org\\.kde\\.gwenview|Gwenview)$"
-        "float,class:^(org\\.gnome\\.NautilusPreviewer|sushi)$"
-        "center,class:^(org\\.gnome\\.NautilusPreviewer|sushi)$"
-        "size 900 640,class:^(org\\.gnome\\.NautilusPreviewer|sushi)$"
-        "float,class:^(asura-system-monitor|io\\.missioncenter\\.MissionCenter)$"
-        "center,class:^(asura-system-monitor|io\\.missioncenter\\.MissionCenter)$"
-        "size 980 720,class:^(asura-system-monitor|io\\.missioncenter\\.MissionCenter)$"
-        "float,class:^(asura-display-manager|hyprmod|nwg-displays|wdisplays)$"
-        "center,class:^(asura-display-manager|hyprmod|nwg-displays|wdisplays)$"
-        "size 1040 720,class:^(asura-display-manager|hyprmod|nwg-displays|wdisplays)$"
-        "float,class:^(Cloudflare Warp|cloudflare-warp|warp-taskbar|Warp)$"
-        "center,class:^(Cloudflare Warp|cloudflare-warp|warp-taskbar|Warp)$"
-        "size 760 940,class:^(Cloudflare Warp|cloudflare-warp|warp-taskbar|Warp)$"
-        "suppressevent maximize,class:^(Cloudflare Warp|cloudflare-warp|warp-taskbar|Warp)$"
-        "float,title:^(Cloudflare Warp|Warp Taskbar|Warp)$"
-        "center,title:^(Cloudflare Warp|Warp Taskbar|Warp)$"
-        "size 760 940,title:^(Cloudflare Warp|Warp Taskbar|Warp)$"
-        "suppressevent maximize,title:^(Cloudflare Warp|Warp Taskbar|Warp)$"
-        "float,class:^(xdg-desktop-portal-.*)$"
-        "center,class:^(xdg-desktop-portal-.*)$"
-        "size 900 600,class:^(xdg-desktop-portal-.*)$"
+      windowrule = [
+        "float title:^(.*(Open File|Choose Files|File Upload|Save As|Library).*)$, center title:^(.*(Open File|Choose Files|File Upload|Save As|Library).*)$, size 900 600 title:^(.*(Open File|Choose Files|File Upload|Save As|Library).*)$"
+        "float title:^(.*(Authentication Required|PolicyKit1).*)$, center title:^(.*(Authentication Required|PolicyKit1).*)$, size 500 400 title:^(.*(Authentication Required|PolicyKit1).*)$"
+        "float class:^(polkit-gnome-authentication-agent-1|hyprpolkitagent|polkit-kde-authentication-agent-1)$, center class:^(polkit-gnome-authentication-agent-1|hyprpolkitagent|polkit-kde-authentication-agent-1)$, size 500 400 class:^(polkit-gnome-authentication-agent-1|hyprpolkitagent|polkit-kde-authentication-agent-1)$"
+        "float class:^(org\\.kde\\.ark|ark|file-roller|org\\.gnome\\.FileRoller|xarchiver)$, center class:^(org\\.kde\\.ark|ark|file-roller|org\\.gnome\\.FileRoller|xarchiver)$, size 860 620 class:^(org\\.kde\\.ark|ark|file-roller|org\\.gnome\\.FileRoller|xarchiver)$"
+        "float class:^(org\\.gnome\\.Loupe|loupe|org\\.kde\\.gwenview|Gwenview)$, center class:^(org\\.gnome\\.Loupe|loupe|org\\.kde\\.gwenview|Gwenview)$, size 980 720 class:^(org\\.gnome\\.Loupe|loupe|org\\.kde\\.gwenview|Gwenview)$"
+        "float class:^(org\\.gnome\\.NautilusPreviewer|sushi)$, center class:^(org\\.gnome\\.NautilusPreviewer|sushi)$, size 900 640 class:^(org\\.gnome\\.NautilusPreviewer|sushi)$"
+        "float class:^(asura-system-monitor|io\\.missioncenter\\.MissionCenter)$, center class:^(asura-system-monitor|io\\.missioncenter\\.MissionCenter)$, size 980 720 class:^(asura-system-monitor|io\\.missioncenter\\.MissionCenter)$"
+        "float class:^(asura-display-manager|hyprmod|nwg-displays|wdisplays)$, center class:^(asura-display-manager|hyprmod|nwg-displays|wdisplays)$, size 1040 720 class:^(asura-display-manager|hyprmod|nwg-displays|wdisplays)$"
+        "float class:^(Cloudflare Warp|cloudflare-warp|warp-taskbar|Warp)$, center class:^(Cloudflare Warp|cloudflare-warp|warp-taskbar|Warp)$, size 760 940 class:^(Cloudflare Warp|cloudflare-warp|warp-taskbar|Warp)$, suppress_event maximize class:^(Cloudflare Warp|cloudflare-warp|warp-taskbar|Warp)$"
+        "float title:^(Cloudflare Warp|Warp Taskbar|Warp)$, center title:^(Cloudflare Warp|Warp Taskbar|Warp)$, size 760 940 title:^(Cloudflare Warp|Warp Taskbar|Warp)$, suppress_event maximize title:^(Cloudflare Warp|Warp Taskbar|Warp)$"
+        "float class:^(xdg-desktop-portal-.*)$, center class:^(xdg-desktop-portal-.*)$, size 900 600 class:^(xdg-desktop-portal-.*)$"
       ];
 
       layerrule = [
-        "blur,quickshell:.*"
-        "ignorealpha 0.79,quickshell:.*"
-        "blur,notifications"
-        "ignorealpha 0.69,notifications"
-        "noanim,launcher"
-        "blur,launcher"
-        "ignorealpha 0.5,launcher"
-        "noanim,overview"
-        "blur,session"
-        "noanim,quickshell:regionSelector"
-        "noanim,quickshell:recordingMarker"
-        "noanim,^ags-.*$"
+        "match:namespace quickshell:.*, blur 1, ignore_alpha 0.79"
+        "match:namespace notifications, blur 1, ignore_alpha 0.69"
+        "match:namespace launcher, no_anim 1, blur 1, ignore_alpha 0.5"
+        "match:namespace overview, no_anim 1"
+        "match:namespace session, blur 1"
+        "match:namespace quickshell:regionSelector, no_anim 1"
+        "match:namespace quickshell:recordingMarker, no_anim 1"
+        "match:namespace ^ags-.*$, no_anim 1"
       ];
     };
   };
