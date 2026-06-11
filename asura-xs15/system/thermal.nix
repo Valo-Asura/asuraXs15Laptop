@@ -8,6 +8,55 @@
   services.tlp.enable = lib.mkForce false;
   services.auto-cpufreq.enable = false;
   services.power-profiles-daemon.enable = lib.mkForce false;
+  services.tuned = {
+    enable = true;
+    settings = {
+      dynamic_tuning = true;
+      sleep_interval = 1;
+      update_interval = 5;
+    };
+    profiles = {
+      asura-xs15-balanced = {
+        main = {
+          summary = "Asura XS15 balanced profile with cooler Alder Lake boost behavior";
+          include = "balanced";
+        };
+        cpu = {
+          governor = "schedutil|powersave";
+          energy_perf_bias = "normal";
+          energy_performance_preference = "balance_power";
+          boost = 1;
+        };
+        acpi.platform_profile = "balanced";
+        video.panel_power_savings = 0;
+      };
+
+      asura-xs15-performance = {
+        main = {
+          summary = "Asura XS15 performance profile without full server-style CPU pinning";
+          include = "balanced";
+        };
+        cpu = {
+          governor = "schedutil|powersave";
+          energy_perf_bias = "normal";
+          energy_performance_preference = "balance_performance";
+          boost = 1;
+        };
+        acpi.platform_profile = "performance|balanced";
+        video.panel_power_savings = 0;
+      };
+    };
+    ppdSettings = {
+      main.default = "balanced";
+      profiles = {
+        balanced = "asura-xs15-balanced";
+        performance = "asura-xs15-performance";
+        power-saver = "balanced-battery";
+      };
+      battery.balanced = "balanced-battery";
+    };
+    recommend.asura-xs15-balanced = { };
+  };
 
   environment.systemPackages = with pkgs; [
     lm_sensors

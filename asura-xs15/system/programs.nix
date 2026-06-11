@@ -7,7 +7,6 @@
 
 let
   hyprlandPackages = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system};
-  skwdWall = inputs.skwd-wall.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 
 {
@@ -39,8 +38,6 @@ in
       xwayland.enable = true;
     };
 
-    skwd-wall.enable = true;
-
     chromium = {
       enable = true;
       extensions = [
@@ -50,19 +47,5 @@ in
     };
 
     ssh.startAgent = true;
-  };
-
-  systemd.user.services.skwd-daemon = {
-    description = "Skwd wallpaper daemon";
-    wantedBy = [ "graphical-session.target" ];
-    partOf = [ "graphical-session.target" ];
-    after = [ "graphical-session.target" ];
-    environment.RUST_LOG = "info";
-    serviceConfig = {
-      Type = "simple";
-      ExecStart = "${skwdWall}/bin/skwd-daemon";
-      Restart = "on-failure";
-      RestartSec = 2;
-    };
   };
 }

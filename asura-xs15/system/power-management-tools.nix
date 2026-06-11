@@ -51,10 +51,10 @@
         if acpi -a 2>/dev/null | grep -q "off-line"; then
           sudo tuned-adm profile balanced-battery \
             || sudo tuned-adm profile powersave \
-            || sudo tuned-adm profile balanced \
+            || sudo tuned-adm profile asura-xs15-balanced \
             || true
         else
-          sudo tuned-adm profile throughput-performance \
+          sudo tuned-adm profile asura-xs15-balanced \
             || sudo tuned-adm profile balanced \
             || true
         fi

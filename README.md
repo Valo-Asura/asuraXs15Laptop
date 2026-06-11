@@ -31,9 +31,9 @@ new commands should use `#asura-xs15`.
 | Lockscreen | Noctalia IPC lock using `screenshots/lockscreen.png`; |
 | File manager | Nautilus, with `DBusActivatable=false` local desktop override |
 | Theme | Dark GTK/libadwaita settings, Papirus-Dark icons, Bibata Classic cursor |
-| Wallpaper | `SUPER+W` runs `asura-wallpaper-panel`; it opens `skwd wall toggle` first, then falls back to Noctalia |
+| Wallpaper | `SUPER+W` opens Noctalia's wallpaper panel; `asura-video-wallpaper` applies `mpvpaper` video wallpapers |
 | Fan control | NBFC-Linux `0.5.2` plus NBFC-GTK `0.4.1` |
-| Fan profile | Declarative two-fan `Colorful X15 AT 22` config with 8-bit `MaxSpeedValue = 255` |
+| Fan profile | Declarative two-fan `Colorful X15 AT 22` config with `MaxSpeedValue = 255`, max-sensor ramping, and emergency thermal guard |
 | Plymouth | Local `circle_hud` theme from `asura-xs15/backup/plymouth/circle_hud` |
 | Kernel | CachyOS `7.0.11` from `nix-cachyos-kernel/release` |
 | Boot GPU policy | Intel `i915` loads in initrd; NVIDIA stays out of initrd/modules-load and explicit `nvidia-drm.*` boot params |
@@ -48,7 +48,9 @@ rebuild                       # fish alias for sudo nixos-rebuild switch --flake
 nbfc-colorful-verify          # verify selected NBFC config, fan count, and registers
 thermal-status                # temperatures, tuned/thermald/NBFC state
 asura-dark-mode-refresh       # reapply GTK/libadwaita dark settings in the active session
-asura-wallpaper-panel         # skwd-wall picker first, Noctalia wallpaper panel fallback
+asura-wallpaper-panel         # Noctalia wallpaper panel
+asura-video-wallpaper FILE    # mpvpaper video wallpaper; restored by Hyprland on next login
+asura-video-wallpaper-stop    # stop mpvpaper and return to Noctalia image wallpaper
 ```
 
 ## Repository Structure
@@ -87,7 +89,7 @@ multi-file domains such as `hyprland/`, `noctaliaShell/`, `scripts/`, and
 | Document | Purpose |
 |---|---|
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | Rebuild, fan, theme, and repo safety checks |
-| [`docs/WALLPAPER.md`](docs/WALLPAPER.md) | `SUPER+W`, wallpaper paths, and fallback behavior |
+| [`docs/WALLPAPER.md`](docs/WALLPAPER.md) | `SUPER+W`, Noctalia wallpaper paths, and mpvpaper video wallpaper |
 
 ## Previous Config References
 
@@ -103,6 +105,9 @@ Important carry-overs:
 - NBFC profile `Colorful X15 AT 22`.
 - True fan max is 8-bit `255`, not `100`.
 - GPU fan registers are read `208`, write `232`.
+- NBFC must use the hottest CPU/GPU sensor (`TemperatureAlgorithmType = Max`)
+  so short Alder Lake spikes ramp fans instead of being hidden by averaged
+  sensors.
 - Live fan testing confirmed CPU reaches `100%` target. GPU accepts `100%`
   target, but its current-speed readback can stay negative/low on this EC, so
   use target speed plus airflow/noise for manual GPU fan confirmation.

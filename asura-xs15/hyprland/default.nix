@@ -21,7 +21,7 @@ let
   startupCommands = [
     "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE XDG_SESSION_CLASS XDG_SESSION_ID XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS"
     "noctalia"
-    "systemctl --user start skwd-daemon.service || skwd-daemon"
+    "asura-video-wallpaper --restore"
     "asura-apply-cursor-theme"
     "asura-monitor-guard --daemon"
     "easyeffects --gapplication-service"
@@ -198,13 +198,10 @@ in
       ];
 
       layerrule = [
-        "match:namespace quickshell:.*, blur 1, ignore_alpha 0.79"
         "match:namespace notifications, blur 1, ignore_alpha 0.69"
         "match:namespace launcher, no_anim 1, blur 1, ignore_alpha 0.5"
         "match:namespace overview, no_anim 1"
         "match:namespace session, blur 1"
-        "match:namespace quickshell:regionSelector, no_anim 1"
-        "match:namespace quickshell:recordingMarker, no_anim 1"
         "match:namespace ^ags-.*$, no_anim 1"
       ];
     };

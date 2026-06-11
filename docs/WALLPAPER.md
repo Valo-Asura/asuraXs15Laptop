@@ -1,8 +1,8 @@
 # Wallpaper Workflow
 
 This system uses Noctalia as the active shell and keeps the wallpaper entry
-point declarative through Home Manager. `skwd-wall` is installed from its
-upstream flake for the primary picker.
+point declarative through Home Manager. Image wallpaper selection is handled by
+Noctalia. Video wallpaper is handled by `mpvpaper` through local helper scripts.
 
 ## Keybinds
 
@@ -19,17 +19,34 @@ upstream flake for the primary picker.
 asura-wallpaper-panel
 ```
 
-The wrapper tries `skwd-wall` first:
-
-```bash
-skwd wall toggle
-```
-
-If that command is unavailable or exits unsuccessfully, it falls back to
-Noctalia:
+The wrapper opens Noctalia:
 
 ```bash
 noctalia msg panel-toggle wallpaper
+```
+
+## Video Wallpaper
+
+Apply a video wallpaper:
+
+```bash
+asura-video-wallpaper /path/to/wallpaper.mp4
+```
+
+If no path is passed, the helper picks the first `mp4`, `webm`, `mkv`, or
+`mov` file under `/home/asura/Pictures/Wallpapers`.
+
+Stop video wallpaper and return to the Noctalia image wallpaper:
+
+```bash
+asura-video-wallpaper-stop
+```
+
+Hyprland runs `asura-video-wallpaper --restore` on session start. It does
+nothing unless a video path was previously stored in:
+
+```text
+~/.local/state/asura/video-wallpaper
 ```
 
 ## Paths
@@ -37,9 +54,8 @@ noctalia msg panel-toggle wallpaper
 | Path | Purpose |
 |---|---|
 | `/home/asura/Pictures/Wallpapers` | Main wallpaper directory used by Noctalia settings |
-| `github:liixini/skwd-wall` | Flake input for the primary wallpaper picker |
 | `/etc/nixos/asura-xs15/noctaliaShell/settings.toml` | Declarative Noctalia wallpaper and lockscreen settings |
-| `/etc/nixos/asura-xs15/scripts/desktop-helpers.nix` | Declares `asura-wallpaper-panel` |
+| `/etc/nixos/asura-xs15/scripts/desktop-helpers.nix` | Declares Noctalia and `mpvpaper` wallpaper helpers |
 | `/etc/nixos/asura-xs15/hyprland/bindings.nix` | Nix-owned Hyprland keybind source |
 | `/etc/nixos/screenshots/lockscreen.png` | Noctalia lockscreen wallpaper |
 
@@ -47,11 +63,13 @@ noctalia msg panel-toggle wallpaper
 
 ```bash
 command -v asura-wallpaper-panel
-command -v skwd
+command -v asura-video-wallpaper
+command -v mpvpaper
 asura-wallpaper-panel
+asura-video-wallpaper /path/to/video.mp4
+asura-video-wallpaper-stop
 hyprctl binds | grep -F 'SUPER'
-systemctl --user status skwd-daemon.service --no-pager
 ```
 
-The expected path is `skwd wall toggle`. If it fails, Noctalia's wallpaper
-panel should still open.
+The expected `SUPER+W` path is Noctalia's wallpaper panel. Video wallpaper is
+explicit so the shell does not start `mpvpaper` unless a video is selected.

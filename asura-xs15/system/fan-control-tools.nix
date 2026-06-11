@@ -1,5 +1,6 @@
 # NBFC fan control for the Colorful XS 22 / X15 XS laptop.
 {
+  config,
   lib,
   pkgs,
   ...
@@ -110,15 +111,20 @@ let
 
   nbfcConfig = {
     NotebookModel = "Colorful X15 AT 22";
-    Author = "sek1ro; NixOS declarative two-fan 8-bit PWM profile";
+    Author = "sek1ro; NixOS declarative two-fan 8-bit PWM profile with max-sensor ramp";
     EcPollInterval = 100;
     ReadWriteWords = false;
-    CriticalTemperature = 77;
-    CriticalTemperatureOffset = 7;
+    CriticalTemperature = 72;
+    CriticalTemperatureOffset = 5;
     FanConfigurations = [
       {
         ReadRegister = 207;
         WriteRegister = 231;
+        Sensors = [
+          "@CPU"
+          "@GPU"
+        ];
+        TemperatureAlgorithmType = "Max";
         MinSpeedValue = 20;
         MaxSpeedValue = 255;
         IndependentReadMinMaxValues = false;
@@ -134,28 +140,28 @@ let
             FanSpeed = 0.0;
           }
           {
-            UpThreshold = 50;
+            UpThreshold = 40;
             DownThreshold = 20;
-            FanSpeed = 23.0769234;
+            FanSpeed = 30.0;
           }
           {
-            UpThreshold = 60;
-            DownThreshold = 50;
+            UpThreshold = 52;
+            DownThreshold = 38;
             FanSpeed = 50.0;
           }
           {
-            UpThreshold = 65;
-            DownThreshold = 55;
+            UpThreshold = 58;
+            DownThreshold = 46;
             FanSpeed = 70.0;
           }
           {
-            UpThreshold = 70;
-            DownThreshold = 60;
+            UpThreshold = 64;
+            DownThreshold = 52;
             FanSpeed = 90.0;
           }
           {
-            UpThreshold = 76;
-            DownThreshold = 60;
+            UpThreshold = 70;
+            DownThreshold = 58;
             FanSpeed = 100.0;
           }
         ];
@@ -170,6 +176,11 @@ let
       {
         ReadRegister = 208;
         WriteRegister = 232;
+        Sensors = [
+          "@CPU"
+          "@GPU"
+        ];
+        TemperatureAlgorithmType = "Max";
         MinSpeedValue = 20;
         MaxSpeedValue = 255;
         IndependentReadMinMaxValues = false;
@@ -185,28 +196,28 @@ let
             FanSpeed = 0.0;
           }
           {
-            UpThreshold = 50;
+            UpThreshold = 40;
             DownThreshold = 20;
-            FanSpeed = 23.0769234;
+            FanSpeed = 30.0;
           }
           {
-            UpThreshold = 60;
-            DownThreshold = 50;
+            UpThreshold = 52;
+            DownThreshold = 38;
             FanSpeed = 50.0;
           }
           {
-            UpThreshold = 65;
-            DownThreshold = 55;
+            UpThreshold = 58;
+            DownThreshold = 46;
             FanSpeed = 70.0;
           }
           {
-            UpThreshold = 70;
-            DownThreshold = 60;
+            UpThreshold = 64;
+            DownThreshold = 52;
             FanSpeed = 90.0;
           }
           {
-            UpThreshold = 76;
-            DownThreshold = 60;
+            UpThreshold = 70;
+            DownThreshold = 58;
             FanSpeed = 100.0;
           }
         ];
@@ -255,6 +266,7 @@ let
     max_values="$(${pkgs.jq}/bin/jq -r '[.FanConfigurations[].MaxSpeedValue] | join(",")' "$model_file")"
     writes="$(${pkgs.jq}/bin/jq -r '[.FanConfigurations[].WriteRegister] | join(",")' "$model_file")"
     reads="$(${pkgs.jq}/bin/jq -r '[.FanConfigurations[].ReadRegister] | join(",")' "$model_file")"
+    algorithms="$(${pkgs.jq}/bin/jq -r '[.FanConfigurations[].TemperatureAlgorithmType] | join(",")' "$model_file")"
 
     test "$selected" = "$model_file"
     test "$ec_type" = "ec_sys"
@@ -262,6 +274,7 @@ let
     test "$max_values" = "255,255"
     test "$writes" = "231,232"
     test "$reads" = "207,208"
+    test "$algorithms" = "Max,Max"
 
     echo "OK: selected config is absolute"
     echo "OK: EC backend is ec_sys"
@@ -269,6 +282,7 @@ let
     echo "OK: MaxSpeedValue is 255 for both fans"
     echo "OK: CPU/GPU write registers are 231/232"
     echo "OK: CPU/GPU read registers are 207/208"
+    echo "OK: temperature algorithm is Max for both fans"
     echo "NOTE: GPU current-speed readback can report a negative/low value on this EC."
     echo "      Use Target Fan Speed plus audible airflow for manual GPU fan tests."
     echo
@@ -318,9 +332,52 @@ let
       sleep 2
     done
   '';
+
+  asuraThermalGuard = pkgs.writeShellScriptBin "asura-thermal-guard" ''
+    set -euo pipefail
+
+    hot_c="''${ASURA_THERMAL_GUARD_HOT:-88}"
+    cool_c="''${ASURA_THERMAL_GUARD_COOL:-72}"
+    interval="''${ASURA_THERMAL_GUARD_INTERVAL:-2}"
+    manual=0
+
+    max_coretemp() {
+      max=0
+      for hwmon in /sys/class/hwmon/hwmon*; do
+        [ -r "$hwmon/name" ] || continue
+        [ "$(${pkgs.coreutils}/bin/cat "$hwmon/name")" = "coretemp" ] || continue
+        for input in "$hwmon"/temp*_input; do
+          [ -r "$input" ] || continue
+          value="$(${pkgs.coreutils}/bin/cat "$input" 2>/dev/null || echo 0)"
+          value_c=$((value / 1000))
+          [ "$value_c" -gt "$max" ] && max="$value_c"
+        done
+      done
+      echo "$max"
+    }
+
+    while true; do
+      temp="$(max_coretemp)"
+
+      if [ "$temp" -ge "$hot_c" ] && [ "$manual" -eq 0 ]; then
+        ${nbfcLinux}/bin/nbfc set --speed 100 || ${pkgs.systemd}/bin/systemctl restart nbfc || true
+        ${pkgs.systemd}/bin/systemd-cat -t asura-thermal-guard -p warning \
+          echo "coretemp max ''${temp}C >= ''${hot_c}C; forced NBFC fans to 100%"
+        manual=1
+      elif [ "$temp" -le "$cool_c" ] && [ "$manual" -eq 1 ]; then
+        ${nbfcLinux}/bin/nbfc set --auto || true
+        ${pkgs.systemd}/bin/systemd-cat -t asura-thermal-guard -p info \
+          echo "coretemp max ''${temp}C <= ''${cool_c}C; returned NBFC to auto"
+        manual=0
+      fi
+
+      ${pkgs.coreutils}/bin/sleep "$interval"
+    done
+  '';
 in
 {
   environment.systemPackages = [
+    asuraThermalGuard
     nbfcLinux
     nbfcGtk
     nbfcGtkDesktop
@@ -348,6 +405,7 @@ in
       pkgs.coreutils
       pkgs.jq
       pkgs.kmod
+      pkgs.procps
       pkgs.systemd
       pkgs.util-linux
     ];
@@ -370,6 +428,28 @@ in
       Restart = "on-failure";
       RestartSec = 3;
       StateDirectory = "nbfc";
+    };
+  };
+
+  systemd.services.asura-thermal-guard = {
+    description = "Asura XS15 emergency NBFC fan guard";
+    after = [
+      "nbfc.service"
+      "multi-user.target"
+    ];
+    requires = [ "nbfc.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = [
+      config.hardware.nvidia.package
+      nbfcLinux
+      pkgs.coreutils
+      pkgs.systemd
+    ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${asuraThermalGuard}/bin/asura-thermal-guard";
+      Restart = "always";
+      RestartSec = 3;
     };
   };
 }

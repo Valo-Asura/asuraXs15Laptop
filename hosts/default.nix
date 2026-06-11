@@ -16,7 +16,6 @@
       inputs.nixos-hardware.nixosModules.common-pc
       inputs.nixos-hardware.nixosModules.common-cpu-intel
       inputs.sops-nix.nixosModules.sops
-      inputs.skwd-wall.nixosModules.default
       ../system
       inputs.home-manager.nixosModules.home-manager
       {
@@ -46,7 +45,6 @@
       inputs.nixos-hardware.nixosModules.common-pc
       inputs.nixos-hardware.nixosModules.common-cpu-intel
       inputs.sops-nix.nixosModules.sops
-      inputs.skwd-wall.nixosModules.default
       ../system
       inputs.home-manager.nixosModules.home-manager
       {

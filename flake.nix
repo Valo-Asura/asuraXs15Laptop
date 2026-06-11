@@ -25,10 +25,6 @@
       url = "github:hyprwm/Hyprland/v0.55.3";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    skwd-wall = {
-      url = "github:liixini/skwd-wall";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     # Cached CachyOS kernels. Keep this input independent; upstream warns not
     # to override its nixpkgs input when relying on its binary cache.

@@ -37,13 +37,62 @@ let
   asuraWallpaperPanel = pkgs.writeShellScriptBin "asura-wallpaper-panel" ''
     set -euo pipefail
 
-    if command -v skwd >/dev/null 2>&1; then
-      if skwd wall toggle; then
+    exec noctalia msg panel-toggle wallpaper
+  '';
+
+  asuraVideoWallpaper = pkgs.writeShellScriptBin "asura-video-wallpaper" ''
+    set -euo pipefail
+
+    state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/asura"
+    state_file="$state_dir/video-wallpaper"
+    wallpaper_dir="''${ASURA_WALLPAPER_DIR:-$HOME/Pictures/Wallpapers}"
+    output="''${ASURA_WALLPAPER_OUTPUT:-*}"
+
+    find_video() {
+      ${pkgs.findutils}/bin/find "$wallpaper_dir" -maxdepth 2 -type f \
+        \( -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.mov' \) \
+        2>/dev/null | ${pkgs.coreutils}/bin/head -n 1
+    }
+
+    case "''${1:-}" in
+      --restore)
+        [ -s "$state_file" ] || exit 0
+        video="$(${pkgs.coreutils}/bin/cat "$state_file")"
+        ;;
+      --stop)
+        ${pkgs.procps}/bin/pkill -x mpvpaper >/dev/null 2>&1 || true
+        ${pkgs.coreutils}/bin/rm -f "$state_file"
+        noctalia msg config-reload >/dev/null 2>&1 || true
         exit 0
-      fi
+        ;;
+      ""|--pick)
+        video="$(find_video)"
+        ;;
+      *)
+        video="$1"
+        ;;
+    esac
+
+    if [ -z "''${video:-}" ] || [ ! -f "$video" ]; then
+      ${notify} "Video wallpaper unavailable" "Add an mp4/webm/mkv/mov under $wallpaper_dir or pass a video path."
+      exit 1
     fi
 
-    exec noctalia msg panel-toggle wallpaper
+    ${pkgs.coreutils}/bin/mkdir -p "$state_dir"
+    ${pkgs.coreutils}/bin/printf '%s\n' "$video" > "$state_file"
+    ${pkgs.procps}/bin/pkill -x mpvpaper >/dev/null 2>&1 || true
+
+    exec ${pkgs.mpvpaper}/bin/mpvpaper \
+      --fork \
+      --auto-stop \
+      --layer background \
+      --mpv-options "no-audio loop hwdec=auto-safe profile=fast" \
+      "$output" \
+      "$video"
+  '';
+
+  asuraVideoWallpaperStop = pkgs.writeShellScriptBin "asura-video-wallpaper-stop" ''
+    exec asura-video-wallpaper --stop
   '';
 
   asuraMonitorGuard = pkgs.writeShellScriptBin "asura-monitor-guard" ''
@@ -136,6 +185,8 @@ in
     asuraDisplayManager
     asuraFileManager
     asuraMonitorGuard
+    asuraVideoWallpaper
+    asuraVideoWallpaperStop
     asuraWallpaperPanel
     clipboard
   ];
