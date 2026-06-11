@@ -45,6 +45,21 @@
         acpi.platform_profile = "performance|balanced";
         video.panel_power_savings = 0;
       };
+
+      asura-xs15-balanced-battery = {
+        main = {
+          summary = "Asura XS15 battery-balanced profile with cooler boost behavior";
+          include = "balanced-battery";
+        };
+        cpu = {
+          governor = "schedutil|powersave";
+          energy_perf_bias = "powersave";
+          energy_performance_preference = "balance_power";
+          boost = 0;
+        };
+        acpi.platform_profile = "low-power|balanced";
+        video.panel_power_savings = 1;
+      };
     };
     ppdSettings = {
       main.default = "balanced";
@@ -53,7 +68,7 @@
         performance = "asura-xs15-performance";
         power-saver = "balanced-battery";
       };
-      battery.balanced = "balanced-battery";
+      battery.balanced = "asura-xs15-balanced-battery";
     };
     recommend.asura-xs15-balanced = { };
   };
