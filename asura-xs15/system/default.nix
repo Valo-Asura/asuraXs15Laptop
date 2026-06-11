@@ -30,5 +30,6 @@
     ./thermal.nix
     ./fan-control-tools.nix
     ./power-management-tools.nix
+    ./vibewall.nix
   ];
 }

@@ -45,7 +45,7 @@ let
 
     state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/asura"
     state_file="$state_dir/video-wallpaper"
-    wallpaper_dir="''${ASURA_WALLPAPER_DIR:-$HOME/Pictures/Wallpapers}"
+    wallpaper_dir="''${ASURA_WALLPAPER_DIR:-$HOME/Wallpaper}"
     output="''${ASURA_WALLPAPER_OUTPUT:-*}"
 
     find_video() {

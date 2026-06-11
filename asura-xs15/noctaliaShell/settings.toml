@@ -230,46 +230,46 @@ wallpaper_scheme = "muted"
     builtin_ids = [ "hyprland", "foot" ]
 
 [wallpaper]
-directory = "/home/asura/Pictures/Wallpapers"
+directory = "/home/asura/Wallpaper"
 
     [wallpaper.default]
-    path = "/home/asura/Pictures/Wallpapers/example-4.webp"
+    path = "/home/asura/Wallpaper/random_wallpaper.jpg"
 
     [wallpaper.last]
-    path = "/home/asura/Pictures/Wallpapers/example-4.webp"
+    path = "/home/asura/Wallpaper/random_wallpaper.jpg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/asura/Pictures/Wallpapers/example-4.webp"
+    path = "/home/asura/Wallpaper/random_wallpaper.jpg"
 
     [[wallpaper.favorite]]
     palette_source = "wallpaper"
-    path = "/home/asura/Pictures/Wallpapers/wallhaven-od7xol.jpg"
+    path = "/home/asura/Wallpaper/MXBpbZp.png"
     theme_mode = "dark"
     wallpaper_scheme = "Monochrome"
 
     [[wallpaper.favorite]]
-    path = "/home/asura/Pictures/Wallpapers/example-3.jpg"
+    path = "/home/asura/Wallpaper/1004017-colorized.png"
     theme_mode = "dark"
 
     [[wallpaper.favorite]]
     community_palette = "Kanagawa Paper"
     palette_source = "community"
-    path = "/home/asura/Pictures/Wallpapers/example-1.jpg"
+    path = "/home/asura/Wallpaper/138032536_p0.jpg"
     theme_mode = "dark"
 
     [[wallpaper.favorite]]
     community_palette = "Vesper"
     palette_source = "community"
-    path = "/home/asura/Pictures/Wallpapers/example-4.webp"
+    path = "/home/asura/Wallpaper/Angel1.png"
     theme_mode = "dark"
 
     [[wallpaper.favorite]]
-    path = "/home/asura/Pictures/Wallpapers/stitch-disney-5120x3005-10901.png"
+    path = "/home/asura/Wallpaper/wallhaven-1qxxkg.png"
     theme_mode = "dark"
 
     [[wallpaper.favorite]]
     palette_source = "wallpaper"
-    path = "/home/asura/Pictures/Wallpapers/wallhaven-48pqy2.jpg"
+    path = "/home/asura/Wallpaper/wallhaven-211xrg.jpg"
     theme_mode = "dark"
     wallpaper_scheme = "Ayu"
 

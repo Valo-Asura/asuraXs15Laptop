@@ -1,49 +1,75 @@
 # Wallpaper Workflow
 
-This system uses Noctalia as the active shell and keeps the wallpaper entry
-point declarative through Home Manager. Image wallpaper selection is handled by
-Noctalia. Video wallpaper is handled by `mpvpaper` through local helper scripts.
+This system uses Noctalia as the active shell, but wallpaper selection is handled
+by `vibewallREzero`, a native C++23 Wayland picker/daemon under
+`/etc/nixos/asuraPc/vibewallREzero`.
+
+Images apply through Noctalia IPC:
+
+```bash
+noctalia msg wallpaper-set /path/to/image
+```
+
+Videos apply through `mpvpaper`:
+
+```bash
+mpvpaper --fork --auto-stop --layer background --mpv-options "no-audio loop hwdec=auto-safe profile=fast" "*" /path/to/video
+```
 
 ## Keybinds
 
 | Keybind | Action |
 |---|---|
-| `SUPER+W` | Open wallpaper workflow |
-| `SUPER+SHIFT+W` | Open wallpaper workflow |
+| `SUPER+W` | Toggle `vibewallREzero` picker |
+| `SUPER+SHIFT+W` | Toggle `vibewallREzero` picker |
 | `SUPER+P` | Display manager |
 | `SUPER+SHIFT+P` | Restore/reload display layout |
 
 `SUPER+W` runs:
 
 ```bash
-asura-wallpaper-panel
+vibewall toggle
 ```
 
-The wrapper opens Noctalia:
+Hyprland restores the last saved wallpaper on login with:
 
 ```bash
-noctalia msg panel-toggle wallpaper
+vibewall restore
 ```
 
-## Video Wallpaper
+## Picker Modes
 
-Apply a video wallpaper:
+The picker implements the three reference modes from `skwd-wall-main`:
+
+| Mode | Proof |
+|---|---|
+| Slice carousel | `screenshots/vibewallrezero-slice.png` |
+| Grid | `screenshots/vibewallrezero-grid.png` |
+| Hex selector | `screenshots/vibewallrezero-hex.png` |
+
+## Commands
+
+Index local wallpapers:
 
 ```bash
-asura-video-wallpaper /path/to/wallpaper.mp4
+vibewall scan
 ```
 
-If no path is passed, the helper picks the first `mp4`, `webm`, `mkv`, or
-`mov` file under `/home/asura/Pictures/Wallpapers`.
-
-Stop video wallpaper and return to the Noctalia image wallpaper:
+Open the picker:
 
 ```bash
-asura-video-wallpaper-stop
+vibewall toggle
 ```
 
-Hyprland runs `asura-video-wallpaper --restore` on session start. It does
-nothing unless a video path was previously stored in:
+Apply an image or video:
+
+```bash
+vibewall apply /home/asura/Wallpaper/random_wallpaper.jpg
+vibewall apply /home/asura/Wallpaper/chill.mp4
+```
+
+The last wallpaper is stored in the SQLite settings table and restored by
+Hyprland on login. Video state is also mirrored for legacy helpers at:
 
 ```text
 ~/.local/state/asura/video-wallpaper
@@ -53,23 +79,29 @@ nothing unless a video path was previously stored in:
 
 | Path | Purpose |
 |---|---|
-| `/home/asura/Pictures/Wallpapers` | Main wallpaper directory used by Noctalia settings |
+| `/home/asura/Wallpaper` | Main image/video wallpaper directory |
 | `/etc/nixos/asura-xs15/noctaliaShell/settings.toml` | Declarative Noctalia wallpaper and lockscreen settings |
-| `/etc/nixos/asura-xs15/scripts/desktop-helpers.nix` | Declares Noctalia and `mpvpaper` wallpaper helpers |
+| `/etc/nixos/asuraPc/vibewallREzero` | Native picker, daemon, CLI, tests, and Nix module |
 | `/etc/nixos/asura-xs15/hyprland/bindings.nix` | Nix-owned Hyprland keybind source |
 | `/etc/nixos/screenshots/lockscreen.png` | Noctalia lockscreen wallpaper |
 
 ## Validate
 
 ```bash
-command -v asura-wallpaper-panel
-command -v asura-video-wallpaper
+command -v vibewall
 command -v mpvpaper
-asura-wallpaper-panel
-asura-video-wallpaper /path/to/video.mp4
-asura-video-wallpaper-stop
-hyprctl binds | grep -F 'SUPER'
+vibewall scan
+vibewall toggle
+vibewall apply /home/asura/Wallpaper/random_wallpaper.jpg
+vibewall apply /home/asura/Wallpaper/chill.mp4
+hyprctl binds | grep -F 'vibewall toggle'
 ```
 
-The expected `SUPER+W` path is Noctalia's wallpaper panel. Video wallpaper is
-explicit so the shell does not start `mpvpaper` unless a video is selected.
+Tested proof on 2026-06-11:
+
+| Check | Result |
+|---|---|
+| Local scan | `images=34 videos=9 errors=0` |
+| Picker modes | Slice, grid, and hex screenshots captured with `grim` |
+| Daemon toggle | `picker_pid` opens then returns to `-1` after close |
+| Video apply | `mpvpaper` starts for video and is stopped after image restore |

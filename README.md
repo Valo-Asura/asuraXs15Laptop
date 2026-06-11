@@ -6,9 +6,13 @@
 
 ## Showcase
 
-| Desktop Workspace | Lockscreen | Wallpaper Panel |
+| Desktop Workspace | Lockscreen | Vibewall Grid |
 | :--- | :--- | :--- |
-| ![Desktop Workspace](screenshots/desktop-demo.png) | ![Lockscreen](screenshots/lockscreen.png) | ![Wallpaper Panel](screenshots/wallpaper-panel.png) |
+| ![Desktop Workspace](screenshots/desktop-demo.png) | ![Lockscreen](screenshots/lockscreen.png) | ![Vibewall Grid](screenshots/vibewallrezero-grid.png) |
+
+| Vibewall Slice | Vibewall Hex | Video Apply Proof |
+| :--- | :--- | :--- |
+| ![Vibewall Slice](screenshots/vibewallrezero-slice.png) | ![Vibewall Hex](screenshots/vibewallrezero-hex.png) | ![Video Wallpaper](screenshots/vibewallrezero-video-applied.png) |
 
 ## Install
 
@@ -31,7 +35,7 @@ new commands should use `#asura-xs15`.
 | Lockscreen | Noctalia IPC lock using `screenshots/lockscreen.png`; |
 | File manager | Nautilus, with `DBusActivatable=false` local desktop override |
 | Theme | Dark GTK/libadwaita settings, Papirus-Dark icons, Bibata Classic cursor |
-| Wallpaper | `SUPER+W` opens Noctalia's wallpaper panel; `asura-video-wallpaper` applies `mpvpaper` video wallpapers |
+| Wallpaper | `SUPER+W` and `SUPER+SHIFT+W` open native `vibewallREzero`; images apply through Noctalia IPC, videos through `mpvpaper` |
 | Fan control | NBFC-Linux `0.5.2` plus NBFC-GTK `0.4.1` |
 | Fan profile | Declarative two-fan `Colorful X15 AT 22` config with `MaxSpeedValue = 255`, max-sensor ramping, and emergency thermal guard |
 | Plymouth | Local `circle_hud` theme from `asura-xs15/backup/plymouth/circle_hud` |
@@ -48,9 +52,10 @@ rebuild                       # fish alias for sudo nixos-rebuild switch --flake
 nbfc-colorful-verify          # verify selected NBFC config, fan count, and registers
 thermal-status                # temperatures, tuned/thermald/NBFC state
 asura-dark-mode-refresh       # reapply GTK/libadwaita dark settings in the active session
-asura-wallpaper-panel         # Noctalia wallpaper panel
-asura-video-wallpaper FILE    # mpvpaper video wallpaper; restored by Hyprland on next login
-asura-video-wallpaper-stop    # stop mpvpaper and return to Noctalia image wallpaper
+vibewall scan                 # index /home/asura/Wallpaper images/videos and build thumbnails
+vibewall toggle               # open/close the native picker used by SUPER+W
+vibewall apply FILE           # apply an image via Noctalia or a video via mpvpaper
+vibewall restore              # restore last wallpaper on Hyprland login
 ```
 
 ## Repository Structure
@@ -75,6 +80,7 @@ asura-video-wallpaper-stop    # stop mpvpaper and return to Noctalia image wallp
 │       ├── services.nix
 │       ├── theming.nix
 │       └── users.nix
+├── asuraPc/vibewallREzero/ # Native C++23 wallpaper picker/daemon package
 ├── home/                   # Home Manager user configuration
 ├── docs/                   # Validation and workflow docs
 └── screenshots/            # README screenshots
@@ -89,7 +95,7 @@ multi-file domains such as `hyprland/`, `noctaliaShell/`, `scripts/`, and
 | Document | Purpose |
 |---|---|
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | Rebuild, fan, theme, and repo safety checks |
-| [`docs/WALLPAPER.md`](docs/WALLPAPER.md) | `SUPER+W`, Noctalia wallpaper paths, and mpvpaper video wallpaper |
+| [`docs/WALLPAPER.md`](docs/WALLPAPER.md) | `SUPER+W`, vibewallREzero, Noctalia IPC image apply, and mpvpaper video apply |
 
 ## Previous Config References
 
