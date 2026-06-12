@@ -16,6 +16,7 @@ systemctl --failed
 nbfc-colorful-verify
 nbfc status
 systemctl status nbfc --no-pager
+timeout 8s nbfc-gtk --fans || test "$?" = 124
 gsettings get org.gnome.desktop.interface color-scheme
 gsettings get org.gnome.desktop.interface gtk-theme
 xdg-mime query default inode/directory
@@ -29,6 +30,13 @@ xdg-mime query default x-scheme-handler/xdm-app
 xdg-mime query default x-scheme-handler/xdm+app
 test ! -e /run/current-system/sw/bin/hyprlock
 test ! -e /run/current-system/sw/bin/wofi
+systemd-analyze
+systemd-analyze critical-chain graphical.target
+systemd-analyze blame | head -30
+systemctl is-enabled nvidia-persistenced.service || true
+systemctl is-enabled nvidia-persistenced-delayed.timer
+systemctl cat desktop-cache-warm.timer nix-gc.timer nix-optimise.timer
+tuned-adm active
 ```
 
 Expected values:
@@ -41,6 +49,7 @@ Expected values:
 | NBFC EC backend | `ec_sys` |
 | NBFC fan count | `2` |
 | NBFC max speed | `255` for CPU and GPU fans |
+| NBFC-GTK | launches and stays alive until timeout; old failure was missing GTK typelibs |
 | Directory MIME | `org.gnome.Nautilus.desktop` |
 | GNOME color scheme | `prefer-dark` |
 | Hyprland config type | `"hyprlang"` |
@@ -51,6 +60,10 @@ Expected values:
 | Lockscreen wallpaper | `/etc/nixos/screenshots/lockscreen.png` |
 | XDM scheme handlers | `xdm-app.desktop` |
 | Removed launchers | no Hyprlock, no Wofi |
+| Boot critical path | `nvidia-persistenced.service` should not gate `graphical.target` after reboot |
+| NVIDIA persistence | service disabled for boot pull-in, delayed timer enabled |
+| Maintenance timers | `nix-gc.timer` and `nix-optimise.timer` use `Persistent=false` |
+| Cache warm | starts after `2min`, has idle scheduling and memory caps |
 
 Fan safety:
 

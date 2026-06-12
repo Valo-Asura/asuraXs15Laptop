@@ -41,6 +41,7 @@ new commands should use `#asura-xs15`.
 | Plymouth | Local `circle_hud` theme from `asura-xs15/backup/plymouth/circle_hud` |
 | Kernel | CachyOS `7.0.11` from `nix-cachyos-kernel/release` |
 | Boot GPU policy | Intel `i915` loads in initrd; NVIDIA stays out of initrd/modules-load and explicit `nvidia-drm.*` boot params |
+| Performance | CachyOS kernel, `scx_lavd`, `ananicy-cpp` with CachyOS rules, BBR, zram, irqbalance, delayed NVIDIA persistenced, delayed cache warm |
 | Power | `thermald` plus `tuned`; TLP disabled |
 | Downloads | Xtreme Download Manager GTK `8.0.29` pre-release plus Firefox add-on and `xdm-app:` handlers |
 | AI memory | Shared root at `/home/asura/.config/ai-unified-memory`; facts are system-only |
@@ -51,6 +52,8 @@ new commands should use `#asura-xs15`.
 rebuild                       # fish alias for sudo nixos-rebuild switch --flake /etc/nixos#asura-xs15
 nbfc-colorful-verify          # verify selected NBFC config, fan count, and registers
 thermal-status                # temperatures, tuned/thermald/NBFC state
+nbfc-gtk --fans               # launch GTK fan control UI
+systemd-analyze blame         # inspect boot/app-start blockers
 asura-dark-mode-refresh       # reapply GTK/libadwaita dark settings in the active session
 vibewall scan                 # index /home/asura/Wallpaper images/videos and build thumbnails
 vibewall toggle               # open/close the native picker used by SUPER+W
@@ -100,11 +103,15 @@ multi-file domains such as `hyprland/`, `noctaliaShell/`, `scripts/`, and
 
 ## Previous Config References
 
-The CachyOS backup used for this cleanup lives at:
+The CachyOS backup originally used for this cleanup was expected at:
 
 ```text
 /home/asura/Downloads/colorfullxs15Previous
 ```
+
+On 2026-06-12 that path was not present locally, so the current tuning is based
+on the durable CachyOS findings already captured in shared system memory plus
+live `systemd-analyze` data from this NixOS boot.
 
 Important carry-overs:
 
@@ -123,6 +130,15 @@ Important carry-overs:
   explicit early DRM setup; this config keeps NVIDIA out of
   `boot.initrd.kernelModules`, keeps NVIDIA out of systemd modules-load, and
   removes local `nvidia-drm.*` boot params.
+- CachyOS-style responsiveness is declarative here: CachyOS kernel,
+  `scx_lavd`, `ananicy-cpp` with CachyOS rules, `irqbalance`, BBR, zram, and
+  TuneD profiles.
+- `nvidia-persistenced` remains available for NVML/monitoring, but starts from
+  a delayed timer so it does not block `graphical.target`.
+- Nix GC/optimise timers do not catch up missed daily runs at boot, avoiding
+  I/O spikes during first login.
+- Desktop cache warming is delayed and capped; it no longer reads package
+  closures immediately after login.
 - The `rescue-no-nvidia` boot specialization keeps the old rescue path
   declarative: multi-user target, Plymouth disabled, and temporary NVIDIA
   blacklist only for that entry.

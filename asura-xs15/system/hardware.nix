@@ -92,4 +92,17 @@ in
     "modules-load.d/nvidia-modeset.conf".text = "";
     "modules-load.d/nvidia-uvm.conf".text = "";
   };
+
+  # Keep persistence/NVML available for monitors, but do not let the dGPU
+  # registration path block multi-user/graphical boot.
+  systemd.services.nvidia-persistenced.wantedBy = lib.mkForce [ ];
+  systemd.timers.nvidia-persistenced-delayed = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      Unit = "nvidia-persistenced.service";
+      OnBootSec = "12s";
+      AccuracySec = "1s";
+      Persistent = false;
+    };
+  };
 }

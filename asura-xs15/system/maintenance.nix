@@ -47,11 +47,12 @@
     daemonIOSchedPriority = 7;
     optimise.automatic = true;       # periodic store optimisation pass
     optimise.dates = [ "daily" ];
+    optimise.persistent = false;     # do not catch up store optimisation during first login
     gc = {
       automatic = true;
       dates = "daily";
       options = "--delete-older-than 3d";
-      persistent = true;
+      persistent = false;            # do not run missed GC immediately at boot
     };
   };
 

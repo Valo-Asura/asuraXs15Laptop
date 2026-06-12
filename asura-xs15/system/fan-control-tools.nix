@@ -39,6 +39,19 @@ let
     ps.pygobject3
   ]);
 
+  gtkTypelibPath = lib.makeSearchPath "lib/girepository-1.0" (
+    map lib.getLib [
+      pkgs.gtk4
+      pkgs.glib
+      pkgs.gdk-pixbuf
+      pkgs.pango
+      pkgs.graphene
+      pkgs.cairo
+      pkgs.harfbuzz
+      pkgs.gobject-introspection
+    ]
+  );
+
   nbfcGtk = pkgs.stdenvNoCC.mkDerivation {
     pname = "nbfc-gtk";
     version = "0.4.1";
@@ -77,6 +90,7 @@ let
 
     preFixup = ''
       gappsWrapperArgs+=(
+        --prefix GI_TYPELIB_PATH : ${lib.escapeShellArg gtkTypelibPath}
         --prefix PATH : ${
           lib.makeBinPath [
             nbfcLinux
