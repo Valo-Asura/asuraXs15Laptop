@@ -39,13 +39,16 @@ vibewall restore
 
 ## Picker Modes
 
-The picker implements the three reference modes from `skwd-wall-main`:
+The picker implements the reference modes from `skwd-wall-main` plus a native
+Wallhaven browser:
 
 | Mode | Proof |
 |---|---|
 | Slice carousel | `screenshots/vibewallrezero-slice.png` |
 | Grid | `screenshots/vibewallrezero-grid.png` |
 | Hex selector | `screenshots/vibewallrezero-hex.png` |
+| Mosaic | `screenshots/vibewallrezero-mosaic.png` |
+| Wallhaven browser | `screenshots/vibewallrezero-wallhaven.png` |
 
 The picker toolbar exposes local and Wallhaven sources:
 
@@ -54,8 +57,12 @@ The picker toolbar exposes local and Wallhaven sources:
 | `W` | Search/cache Wallhaven using the current search text or default query |
 | `L` | Return to local wallpapers |
 | `R` | Apply a random local wallpaper |
+| `D` | Download selected Wallhaven wallpaper without applying |
 | `/` | Edit search text |
-| `Enter` | Apply selected wallpaper |
+| `Enter` | Apply selected wallpaper; Wallhaven downloads first, then applies |
+
+Wallhaven selection is intentionally two-step: clicking a remote card selects it.
+Use `D`/`DOWNLOAD` to save it only, or `Enter`/`APPLY` to download and apply.
 
 ## Commands
 
@@ -113,7 +120,7 @@ Tested proof on 2026-06-12:
 | Check | Result |
 |---|---|
 | Local scan | `images=34 videos=9 errors=0` |
-| Picker modes | Slice, grid, and hex screenshots captured with `grim` |
-| Wallhaven | CLI search returned results and cached `24` entries with `24` previews |
+| Picker modes | Slice, grid, hex, mosaic, and Wallhaven screenshots captured with `grim` |
+| Wallhaven | CLI search returns results; browser opens cached previews immediately; stale bad previews are skipped |
 | Daemon toggle | `picker_pid` opens then returns to `-1` after close |
 | Video apply | `mpvpaper` starts for video and is stopped after image restore |

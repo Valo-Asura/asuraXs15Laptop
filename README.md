@@ -14,6 +14,10 @@
 | :--- | :--- | :--- |
 | ![Vibewall Slice](screenshots/vibewallrezero-slice.png) | ![Vibewall Hex](screenshots/vibewallrezero-hex.png) | ![Video Wallpaper](screenshots/vibewallrezero-video-applied.png) |
 
+| Vibewall Mosaic | Wallhaven Browser |
+| :--- | :--- |
+| ![Vibewall Mosaic](screenshots/vibewallrezero-mosaic.png) | ![Wallhaven Browser](screenshots/vibewallrezero-wallhaven.png) |
+
 ## Install
 
 ```bash
@@ -61,6 +65,7 @@ vibewall toggle               # open/close the native picker used by SUPER+W
 vibewall apply FILE           # apply an image via Noctalia or a video via mpvpaper
 vibewall restore              # restore last wallpaper on Hyprland login
 vibewall wallhaven search "anime landscape" --page 1
+vibewall picker --wallhaven   # open cached Wallhaven browser directly
 ```
 
 ## Repository Structure

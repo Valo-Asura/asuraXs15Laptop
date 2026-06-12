@@ -39,6 +39,9 @@ vibewall close
 vibewall toggle
 sleep 1
 vibewall close
+vibewall wallhaven search "pixel art" --page 1
+timeout 8s vibewall picker --wallhaven || test "$?" = 124
+vibewall-benchmark
 test ! -e /run/current-system/sw/bin/hyprlock
 test ! -e /run/current-system/sw/bin/wofi
 systemd-analyze
@@ -75,6 +78,8 @@ Expected values:
 | Codex CLI | `/run/current-system/sw/bin/codex` exists after rebuild |
 | Codex plugins | generated `~/.codex/config.toml` keeps GitHub and Notion plugin blocks |
 | Vibewall toggle | first `vibewall toggle` starts daemon/picker; close cleans picker |
+| Vibewall Wallhaven | cached browser opens; `D`/`DOWNLOAD` saves selected remote wallpaper and `Enter`/`APPLY` downloads then applies |
+| Vibewall benchmark | daemon stays small, picker is event-driven at idle |
 | Removed launchers | no Hyprlock, no Wofi |
 | Boot critical path | `nvidia-persistenced.service` should not gate `graphical.target` after reboot |
 | NVIDIA persistence | service disabled for boot pull-in, delayed timer enabled |
