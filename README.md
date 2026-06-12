@@ -10,7 +10,7 @@
 | :--- | :--- | :--- |
 | ![Desktop Workspace](screenshots/desktop-demo.png) | ![Lockscreen](screenshots/lockscreen.png) | ![Vibewall Grid](screenshots/vibewallrezero-grid.png) |
 
-| Vibewall Slice | Vibewall Hex | Video Apply Proof |
+| Vibewall Slice | Vibewall Hex | More/ehh image |
 | :--- | :--- | :--- |
 | ![Vibewall Slice](screenshots/vibewallrezero-slice.png) | ![Vibewall Hex](screenshots/vibewallrezero-hex.png) | ![Video Wallpaper](screenshots/vibewallrezero-video-applied.png) |
 
