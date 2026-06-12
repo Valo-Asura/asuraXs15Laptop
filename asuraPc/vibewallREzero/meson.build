@@ -110,6 +110,7 @@ executable(
     'src/picker/renderer.cpp',
     'src/picker/wayland_app.cpp',
     core_light,
+    'src/core/wallhaven_client.cpp',
   ],
   include_directories: inc,
   dependencies: [
@@ -120,8 +121,10 @@ executable(
     libepoxy,
     xkbcommon,
     sqlite3,
+    libcurl,
     vips_cpp,
     tomlplusplus,
+    nlohmann_json,
     threads,
     generated_protocol_dep,
   ],

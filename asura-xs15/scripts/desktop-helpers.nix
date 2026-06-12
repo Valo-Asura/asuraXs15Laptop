@@ -22,8 +22,8 @@ let
   asuraApplyCursorTheme = pkgs.writeShellScriptBin "asura-apply-cursor-theme" ''
     set -euo pipefail
 
-    theme="Bibata-Modern-Classic"
-    size="18"
+    theme="Bibata-Modern-Amber"
+    size="24"
     if command -v gsettings >/dev/null 2>&1; then
       gsettings set org.gnome.desktop.interface cursor-theme "$theme" || true
       gsettings set org.gnome.desktop.interface cursor-size "$size" || true

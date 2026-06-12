@@ -24,7 +24,7 @@ public:
   void init();
   void resize(int width, int height);
   void render(const std::vector<Wallpaper> &wallpapers, int selected, DisplayMode mode,
-              const std::string &query);
+              const std::string &query, bool wallhaven_mode, const std::string &status);
   int hit_test(float x, float y) const;
 
 private:
@@ -38,13 +38,23 @@ private:
   GLint texture_loc_ = -1;
   std::map<std::string, GLuint> textures_;
   std::vector<HitRegion> hit_regions_;
+  float stage_x_ = 0.0F;
+  float stage_y_ = 0.0F;
+  float stage_w_ = 1.0F;
+  float stage_h_ = 1.0F;
+  float content_x_ = 0.0F;
+  float content_y_ = 0.0F;
+  float content_w_ = 1.0F;
+  float content_h_ = 1.0F;
 
   GLuint texture_for(const Wallpaper &wallpaper);
+  void update_stage(DisplayMode mode);
   void draw_rect(float x, float y, float w, float h, float r, float g, float b, float a);
   void draw_textured_quad(float x, float y, float w, float h, GLuint texture, float alpha);
   void draw_polygon(const std::vector<Point> &points, float r, float g, float b, float a);
   void draw_text(float x, float y, const std::string &text, float scale, float r, float g, float b,
                  float a);
+  void draw_badge(float x, float y, const std::string &label, bool active);
   void render_grid(const std::vector<Wallpaper> &wallpapers, int selected);
   void render_slice(const std::vector<Wallpaper> &wallpapers, int selected);
   void render_hex(const std::vector<Wallpaper> &wallpapers, int selected);

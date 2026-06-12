@@ -47,6 +47,16 @@ The picker implements the three reference modes from `skwd-wall-main`:
 | Grid | `screenshots/vibewallrezero-grid.png` |
 | Hex selector | `screenshots/vibewallrezero-hex.png` |
 
+The picker toolbar exposes local and Wallhaven sources:
+
+| Key | Action |
+|---|---|
+| `W` | Search/cache Wallhaven using the current search text or default query |
+| `L` | Return to local wallpapers |
+| `R` | Apply a random local wallpaper |
+| `/` | Edit search text |
+| `Enter` | Apply selected wallpaper |
+
 ## Commands
 
 Index local wallpapers:
@@ -94,14 +104,16 @@ vibewall scan
 vibewall toggle
 vibewall apply /home/asura/Wallpaper/random_wallpaper.jpg
 vibewall apply /home/asura/Wallpaper/chill.mp4
+vibewall wallhaven search "anime landscape" --page 1
 hyprctl binds | grep -F 'vibewall toggle'
 ```
 
-Tested proof on 2026-06-11:
+Tested proof on 2026-06-12:
 
 | Check | Result |
 |---|---|
 | Local scan | `images=34 videos=9 errors=0` |
 | Picker modes | Slice, grid, and hex screenshots captured with `grim` |
+| Wallhaven | CLI search returned results and cached `24` entries with `24` previews |
 | Daemon toggle | `picker_pid` opens then returns to `-1` after close |
 | Video apply | `mpvpaper` starts for video and is stopped after image restore |

@@ -101,10 +101,10 @@ in
         # NVIDIA/EGL/GBM vendor vars intentionally stay out of compositor env.
         "SDL_VIDEODRIVER,wayland,x11"
         "CLUTTER_BACKEND,wayland"
-        "XCURSOR_SIZE,18"
-        "XCURSOR_THEME,Bibata-Modern-Classic"
-        "HYPRCURSOR_SIZE,18"
-        "HYPRCURSOR_THEME,Bibata-Modern-Classic"
+        "XCURSOR_SIZE,24"
+        "XCURSOR_THEME,Bibata-Modern-Amber"
+        "HYPRCURSOR_SIZE,24"
+        "HYPRCURSOR_THEME,Bibata-Modern-Amber"
       ];
 
       "exec-once" = startupCommands;

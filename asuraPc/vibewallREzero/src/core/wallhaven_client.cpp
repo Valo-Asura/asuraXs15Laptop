@@ -23,6 +23,29 @@ size_t write_file(char *ptr, size_t size, size_t nmemb, void *userdata) {
   return size * nmemb;
 }
 
+void curl_download(const std::string &url, const std::filesystem::path &output, long timeout) {
+  CURL *curl = curl_easy_init();
+  if (curl == nullptr) {
+    throw std::runtime_error("curl_easy_init failed");
+  }
+  ensure_parent_dir(output);
+  std::ofstream file(output, std::ios::binary);
+  if (!file) {
+    curl_easy_cleanup(curl);
+    throw std::runtime_error("failed to open " + output.string());
+  }
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &file);
+  CURLcode rc = curl_easy_perform(curl);
+  curl_easy_cleanup(curl);
+  if (rc != CURLE_OK) {
+    throw std::runtime_error("download failed: " + std::string(curl_easy_strerror(rc)));
+  }
+}
+
 std::string curl_get(const std::string &url, const std::string &api_key = {}) {
   CURL *curl = curl_easy_init();
   if (curl == nullptr) {
@@ -117,31 +140,38 @@ std::filesystem::path wallhaven_download(const AppConfig &config, const Wallhave
   const std::filesystem::path ext = std::filesystem::path(entry.image_url).extension();
   const auto output = config.wallpaper_dir / ("wallhaven-" + entry.id + ext.string());
 
-  CURL *curl = curl_easy_init();
-  if (curl == nullptr) {
-    throw std::runtime_error("curl_easy_init failed");
+  if (!std::filesystem::exists(output)) {
+    curl_download(entry.image_url, output, 60L);
   }
-  std::ofstream file(output, std::ios::binary);
-  if (!file) {
-    curl_easy_cleanup(curl);
-    throw std::runtime_error("failed to open " + output.string());
+  return output;
+}
+
+std::filesystem::path wallhaven_download_preview(const AppConfig &config,
+                                                 const WallhavenEntry &entry) {
+  if (entry.preview_url.empty() || entry.id.empty()) {
+    throw std::runtime_error("Wallhaven entry is missing preview URL or id");
   }
-  curl_easy_setopt(curl, CURLOPT_URL, entry.image_url.c_str());
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &file);
-  CURLcode rc = curl_easy_perform(curl);
-  curl_easy_cleanup(curl);
-  if (rc != CURLE_OK) {
-    throw std::runtime_error("Wallhaven download failed: " + std::string(curl_easy_strerror(rc)));
+  const auto thumb_dir = config.cache_dir / "wallhaven";
+  ensure_dir(thumb_dir);
+  std::filesystem::path ext = std::filesystem::path(entry.preview_url).extension();
+  if (ext.empty()) {
+    ext = ".jpg";
+  }
+  const auto output = thumb_dir / (entry.id + ext.string());
+  if (!std::filesystem::exists(output)) {
+    curl_download(entry.preview_url, output, 20L);
   }
   return output;
 }
 
 void cache_wallhaven_search(Database &db, const AppConfig &config, const std::string &query,
                             int page) {
-  for (const auto &entry : wallhaven_search(config, query, page)) {
+  for (auto entry : wallhaven_search(config, query, page)) {
+    try {
+      entry.thumb_path = wallhaven_download_preview(config, entry).string();
+    } catch (const std::exception &) {
+      entry.thumb_path.clear();
+    }
     db.cache_wallhaven(entry);
   }
 }

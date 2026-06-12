@@ -7,6 +7,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <vips/vips8>
@@ -131,6 +132,25 @@ bool point_in_polygon(float x, float y, const std::vector<Point> &points) {
   return inside;
 }
 
+std::string short_name(const Wallpaper &wallpaper, std::size_t limit) {
+  std::string name = wallpaper.name.empty() ? std::filesystem::path(wallpaper.path).filename().string()
+                                            : wallpaper.name;
+  if (name.size() <= limit) {
+    return name;
+  }
+  return name.substr(0, limit > 2 ? limit - 2 : limit) + "..";
+}
+
+std::string type_label(WallpaperType type) {
+  if (type == WallpaperType::Video) {
+    return "VID";
+  }
+  if (type == WallpaperType::Wallhaven) {
+    return "WH";
+  }
+  return "PIC";
+}
+
 std::array<std::uint8_t, 7> glyph(char c) {
   switch (c) {
   case 'A': return {0x0E,0x11,0x11,0x1F,0x11,0x11,0x11};
@@ -197,6 +217,30 @@ void Renderer::resize(int width, int height) {
   width_ = std::max(1, width);
   height_ = std::max(1, height);
   glViewport(0, 0, width_, height_);
+}
+
+void Renderer::update_stage(DisplayMode mode) {
+  const float screen_w = static_cast<float>(width_);
+  const float screen_h = static_cast<float>(height_);
+  float max_w = 1000.0F;
+  float max_h = 660.0F;
+  if (mode == DisplayMode::Slice) {
+    max_w = 1120.0F;
+    max_h = 620.0F;
+  } else if (mode == DisplayMode::Hex) {
+    max_w = 980.0F;
+    max_h = 640.0F;
+  }
+  stage_w_ = std::min(screen_w - 180.0F, max_w);
+  stage_h_ = std::min(screen_h - 160.0F, max_h);
+  stage_w_ = std::max(stage_w_, std::min(screen_w - 32.0F, 620.0F));
+  stage_h_ = std::max(stage_h_, std::min(screen_h - 48.0F, 400.0F));
+  stage_x_ = (screen_w - stage_w_) * 0.5F;
+  stage_y_ = (screen_h - stage_h_) * 0.5F;
+  content_x_ = stage_x_ + 24.0F;
+  content_y_ = stage_y_ + 112.0F;
+  content_w_ = stage_w_ - 48.0F;
+  content_h_ = stage_h_ - 144.0F;
 }
 
 GLuint Renderer::texture_for(const Wallpaper &wallpaper) {
@@ -313,21 +357,60 @@ void Renderer::draw_text(float x, float y, const std::string &text, float scale,
   }
 }
 
+void Renderer::draw_badge(float x, float y, const std::string &label, bool active) {
+  const float w = std::max(46.0F, static_cast<float>(label.size()) * 10.0F + 16.0F);
+  draw_rect(x, y, w, 24.0F, active ? 0.35F : 0.10F, active ? 0.88F : 0.13F,
+            active ? 0.68F : 0.16F, active ? 0.95F : 0.88F);
+  draw_text(x + 8.0F, y + 7.0F, label, 1.6F, active ? 0.03F : 0.72F, active ? 0.05F : 0.76F,
+            active ? 0.04F : 0.82F, 1.0F);
+}
+
 void Renderer::render(const std::vector<Wallpaper> &wallpapers, int selected, DisplayMode mode,
-                      const std::string &query) {
+                      const std::string &query, bool wallhaven_mode, const std::string &status) {
   hit_regions_.clear();
-  glClearColor(0.035F, 0.040F, 0.052F, 0.96F);
+  update_stage(mode);
+  glClearColor(0.015F, 0.018F, 0.023F, 0.46F);
   glClear(GL_COLOR_BUFFER_BIT);
-  draw_rect(0, 0, static_cast<float>(width_), 54, 0.06F, 0.07F, 0.09F, 0.92F);
-  draw_text(22, 18, "VIBEWALL REZERO", 3.0F, 0.95F, 0.74F, 0.25F, 1.0F);
-  draw_text(330, 18, "1 SLICE  2 GRID  3 HEX  / SEARCH  ENTER APPLY  ESC CLOSE", 2.2F,
-            0.72F, 0.76F, 0.82F, 1.0F);
+  draw_rect(0, 0, static_cast<float>(width_), static_cast<float>(height_), 0.02F, 0.024F, 0.030F,
+            0.30F);
+  draw_rect(stage_x_, stage_y_, stage_w_, stage_h_, 0.035F, 0.043F, 0.054F, 0.96F);
+  draw_rect(stage_x_, stage_y_, stage_w_, 90.0F, 0.065F, 0.076F, 0.092F, 0.98F);
+  draw_rect(stage_x_, stage_y_ + 90.0F, stage_w_, 2.0F, 0.33F, 0.82F, 0.66F, 0.90F);
+  draw_text(stage_x_ + 22.0F, stage_y_ + 18.0F, "VIBEWALL REZERO", 3.0F, 0.95F, 0.74F, 0.25F,
+            1.0F);
+  const std::string count = std::to_string(wallpapers.size()) + " ITEMS";
+  draw_text(stage_x_ + stage_w_ - 150.0F, stage_y_ + 21.0F, count, 1.7F, 0.68F, 0.74F, 0.84F,
+            1.0F);
+
+  float nav_x = stage_x_ + 22.0F;
+  const float nav_y = stage_y_ + 55.0F;
+  draw_badge(nav_x, nav_y, "1 SLICE", mode == DisplayMode::Slice);
+  nav_x += 86.0F;
+  draw_badge(nav_x, nav_y, "2 GRID", mode == DisplayMode::Grid);
+  nav_x += 78.0F;
+  draw_badge(nav_x, nav_y, "3 HEX", mode == DisplayMode::Hex);
+  nav_x += 72.0F;
+  draw_badge(nav_x, nav_y, "W WALLHAVEN", wallhaven_mode);
+  nav_x += 122.0F;
+  draw_badge(nav_x, nav_y, "L LOCAL", false);
+  nav_x += 82.0F;
+  draw_badge(nav_x, nav_y, "R RANDOM", false);
+  nav_x += 96.0F;
+  draw_badge(nav_x, nav_y, "/ SEARCH", !query.empty());
+  nav_x += 98.0F;
+  draw_badge(nav_x, nav_y, "ENTER APPLY", false);
+  if (!status.empty()) {
+    draw_text(stage_x_ + 320.0F, stage_y_ + 21.0F, status.substr(0, 32), 1.7F, 0.50F, 0.86F,
+              0.74F, 1.0F);
+  }
   if (!query.empty()) {
-    draw_text(22, 44, "SEARCH:" + query, 2.0F, 0.55F, 0.85F, 1.0F, 1.0F);
+    draw_text(stage_x_ + stage_w_ - 260.0F, stage_y_ + 60.0F, "Q:" + query.substr(0, 22), 1.6F,
+              0.55F, 0.85F, 1.0F, 1.0F);
   }
 
   if (wallpapers.empty()) {
-    draw_text(width_ * 0.25F, height_ * 0.48F, "NO WALLPAPERS - RUN VIBEWALL SCAN", 3.0F,
+    draw_text(stage_x_ + stage_w_ * 0.18F, stage_y_ + stage_h_ * 0.48F,
+              "NO WALLPAPERS - RUN VIBEWALL SCAN", 3.0F,
               0.9F, 0.9F, 0.9F, 1.0F);
     return;
   }
@@ -346,88 +429,127 @@ void Renderer::render(const std::vector<Wallpaper> &wallpapers, int selected, Di
 }
 
 void Renderer::render_grid(const std::vector<Wallpaper> &wallpapers, int selected) {
-  const float margin = 36.0F;
-  const float top = 82.0F;
-  const float gap = 18.0F;
-  const float cell_w = 210.0F;
-  const float cell_h = 148.0F;
-  const int cols = std::max(1, static_cast<int>((width_ - margin * 2 + gap) / (cell_w + gap)));
+  const float gap = 16.0F;
+  const int cols = 4;
+  const int visible_rows = 3;
+  const float cell_w = std::min(214.0F, (content_w_ - gap * (cols - 1)) / cols);
+  const float cell_h = cell_w * 0.60F;
+  const float grid_w = cols * cell_w + (cols - 1) * gap;
   const int selected_row = std::max(0, selected / cols);
-  const int visible_rows = std::max(1, static_cast<int>((height_ - top) / (cell_h + gap)));
-  const int start_row = std::max(0, selected_row - visible_rows / 2);
+  const int start_row = std::max(0, selected_row - 1);
   const int start = start_row * cols;
-  const int end = std::min<int>(wallpapers.size(), start + (visible_rows + 2) * cols);
+  const int end = std::min<int>(wallpapers.size(), start + visible_rows * cols);
+  const float left = content_x_ + (content_w_ - grid_w) * 0.5F;
+  const float total_h = visible_rows * cell_h + (visible_rows - 1) * gap;
+  const float top = content_y_ + std::max(0.0F, (content_h_ - total_h) * 0.5F);
 
   for (int i = start; i < end; ++i) {
     const int local = i - start;
     const int row = local / cols;
     const int col = local % cols;
-    const float x = margin + col * (cell_w + gap);
+    const float x = left + col * (cell_w + gap);
     const float y = top + row * (cell_h + gap);
     const auto color = color_from_group(wallpapers[i].color_group);
-    draw_rect(x - 4, y - 4, cell_w + 8, cell_h + 8, color[0], color[1], color[2],
-              i == selected ? 0.95F : 0.22F);
-    draw_textured_quad(x, y, cell_w, cell_h, texture_for(wallpapers[i]), 0.96F);
-    draw_rect(x, y + cell_h - 26, cell_w, 26, 0.03F, 0.035F, 0.045F, 0.74F);
-    draw_text(x + 8, y + cell_h - 18, wallpapers[i].name.substr(0, 22), 1.7F, 0.92F, 0.94F,
-              0.98F, 1.0F);
+    draw_rect(x - 5, y - 5, cell_w + 10, cell_h + 10, color[0], color[1], color[2],
+              i == selected ? 0.90F : 0.16F);
+    draw_rect(x - 2, y - 2, cell_w + 4, cell_h + 4, 0.025F, 0.030F, 0.040F, 0.94F);
+    draw_textured_quad(x, y, cell_w, cell_h, texture_for(wallpapers[i]), i == selected ? 1.0F : 0.86F);
+    draw_rect(x + 6, y + cell_h - 20, 34, 15, 0.02F, 0.03F, 0.04F, 0.82F);
+    draw_text(x + 11, y + cell_h - 16, type_label(wallpapers[i].type), 1.1F, 0.50F, 0.86F,
+              0.74F, 1.0F);
+    if (i == selected) {
+      draw_rect(x, y + cell_h - 28, cell_w, 28, 0.02F, 0.025F, 0.032F, 0.82F);
+      draw_text(x + 50, y + cell_h - 19, short_name(wallpapers[i], 18), 1.5F, 0.94F, 0.96F,
+                1.0F, 1.0F);
+    }
     hit_regions_.push_back({i, {{x, y}, {x + cell_w, y}, {x + cell_w, y + cell_h}, {x, y + cell_h}}});
   }
 }
 
 void Renderer::render_slice(const std::vector<Wallpaper> &wallpapers, int selected) {
   const int count = static_cast<int>(wallpapers.size());
-  const float center_x = width_ * 0.5F;
-  const float center_y = height_ * 0.52F;
-  for (int offset = -3; offset <= 3; ++offset) {
-    int index = selected + offset;
-    if (index < 0 || index >= count) {
+  if (count == 0) {
+    return;
+  }
+  const float center_x = stage_x_ + stage_w_ * 0.5F;
+  const float center_y = content_y_ + content_h_ * 0.54F;
+  for (int offset = -5; offset <= 5; ++offset) {
+    if (offset == 0) {
       continue;
     }
-    const float focus = offset == 0 ? 1.0F : 0.70F;
-    const float w = (offset == 0 ? 360.0F : 240.0F);
-    const float h = (offset == 0 ? 430.0F : 330.0F);
-    const float x = center_x + offset * 185.0F - w * 0.5F;
-    const float y = center_y - h * 0.5F + std::abs(offset) * 22.0F;
-    const float skew = 48.0F;
+    const int index = (selected + offset + count) % count;
+    const float w = 104.0F;
+    const float h = 300.0F;
+    const float x = center_x + offset * 68.0F - w * 0.5F;
+    const float y = center_y - h * 0.5F + std::abs(offset) * 13.0F;
+    const float skew = 28.0F;
     const auto color = color_from_group(wallpapers[index].color_group);
     const std::vector<Point> poly = {{x + skew, y}, {x + w, y}, {x + w - skew, y + h}, {x, y + h}};
-    draw_polygon(poly, color[0], color[1], color[2], offset == 0 ? 0.58F : 0.28F);
-    draw_textured_quad(x + 18, y + 18, w - 36, h - 58, texture_for(wallpapers[index]), focus);
-    draw_text(x + 28, y + h - 30, wallpapers[index].name.substr(0, 24), 2.1F, 0.95F, 0.95F,
-              0.95F, 1.0F);
+    draw_polygon(poly, color[0], color[1], color[2], 0.20F);
+    draw_textured_quad(x + 11, y + 14, w - 22, h - 32, texture_for(wallpapers[index]), 0.54F);
     hit_regions_.push_back({index, poly});
+  }
+  if (selected >= 0 && selected < count) {
+    const float w = std::min(560.0F, content_w_ * 0.62F);
+    const float h = std::min(340.0F, content_h_ * 0.78F);
+    const float x = center_x - w * 0.5F;
+    const float y = center_y - h * 0.5F;
+    const auto color = color_from_group(wallpapers[selected].color_group);
+    draw_rect(x - 8, y - 8, w + 16, h + 16, color[0], color[1], color[2], 0.92F);
+    draw_rect(x - 4, y - 4, w + 8, h + 8, 0.025F, 0.030F, 0.038F, 0.98F);
+    draw_textured_quad(x, y, w, h, texture_for(wallpapers[selected]), 1.0F);
+    draw_rect(x, y + h - 36, w, 36, 0.02F, 0.025F, 0.032F, 0.84F);
+    draw_text(x + 16, y + h - 24, short_name(wallpapers[selected], 34), 1.8F, 0.96F, 0.97F, 1.0F,
+              1.0F);
+    draw_text(x + w - 52, y + h - 23, type_label(wallpapers[selected].type), 1.4F, 0.50F, 0.86F,
+              0.74F, 1.0F);
+    hit_regions_.push_back({selected, {{x, y}, {x + w, y}, {x + w, y + h}, {x, y + h}}});
   }
 }
 
 void Renderer::render_hex(const std::vector<Wallpaper> &wallpapers, int selected) {
-  const float r = 86.0F;
+  const float r = 58.0F;
   const float step_x = r * 1.55F;
   const float step_y = r * 1.34F;
-  const int cols = std::max(1, static_cast<int>(width_ / step_x));
+  const int cols = std::min(7, std::max(1, static_cast<int>((content_w_ - step_x * 0.5F) / step_x)));
   const int selected_row = std::max(0, selected / cols);
-  const int visible_rows = std::max(1, static_cast<int>((height_ - 90) / step_y));
+  const int visible_rows = std::max(1, static_cast<int>((content_h_ + step_y * 0.5F) / step_y));
   const int start_row = std::max(0, selected_row - visible_rows / 2);
   const int start = start_row * cols;
-  const int end = std::min<int>(wallpapers.size(), start + (visible_rows + 2) * cols);
+  const int end = std::min<int>(wallpapers.size(), start + visible_rows * cols);
+  const float hex_w = cols * step_x + step_x * 0.5F;
+  const float left = content_x_ + (content_w_ - hex_w) * 0.5F + r;
+  const float hex_h = visible_rows * step_y + r;
+  const float top = content_y_ + std::max(0.0F, (content_h_ - hex_h) * 0.5F) + r;
 
   for (int i = start; i < end; ++i) {
     const int local = i - start;
     const int row = local / cols;
     const int col = local % cols;
-    const float cx = 72.0F + col * step_x + (row % 2 == 0 ? 0.0F : step_x * 0.5F);
-    const float cy = 122.0F + row * step_y;
+    const float cx = left + col * step_x + (row % 2 == 0 ? 0.0F : step_x * 0.5F);
+    const float cy = top + row * step_y;
     std::vector<Point> poly;
     for (int k = 0; k < 6; ++k) {
       const float angle = static_cast<float>(M_PI / 6.0 + k * M_PI / 3.0);
       poly.push_back({cx + std::cos(angle) * r, cy + std::sin(angle) * r});
     }
     const auto color = color_from_group(wallpapers[i].color_group);
-    draw_polygon(poly, color[0], color[1], color[2], i == selected ? 0.92F : 0.42F);
+    if (i == selected) {
+      std::vector<Point> outline;
+      outline.reserve(poly.size());
+      for (const auto &point : poly) {
+        outline.push_back({cx + (point.x - cx) * 1.08F, cy + (point.y - cy) * 1.08F});
+      }
+      draw_polygon(outline, color[0], color[1], color[2], 0.94F);
+    }
+    draw_polygon(poly, color[0], color[1], color[2], i == selected ? 0.62F : 0.26F);
     draw_textured_quad(cx - r * 0.62F, cy - r * 0.46F, r * 1.24F, r * 0.92F,
-                       texture_for(wallpapers[i]), 0.90F);
-    draw_text(cx - r * 0.55F, cy + r * 0.48F, wallpapers[i].name.substr(0, 13), 1.6F, 0.96F,
-              0.96F, 0.96F, 1.0F);
+                       texture_for(wallpapers[i]), i == selected ? 1.0F : 0.74F);
+    if (i == selected) {
+      draw_rect(cx - r * 1.18F, cy + r * 0.70F, r * 2.36F, 25.0F, 0.02F, 0.025F, 0.032F, 0.84F);
+      draw_text(cx - r * 1.05F, cy + r * 0.80F, short_name(wallpapers[i], 18), 1.4F, 0.96F,
+                0.96F, 0.96F, 1.0F);
+    }
     hit_regions_.push_back({i, poly});
   }
 }

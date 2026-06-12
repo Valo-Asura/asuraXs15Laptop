@@ -18,8 +18,8 @@
 
     cursor = {
       package = pkgs.bibata-cursors;
-      name = "Bibata-Modern-Classic";
-      size = 18;
+      name = "Bibata-Modern-Amber";
+      size = 24;
     };
 
     fonts = {

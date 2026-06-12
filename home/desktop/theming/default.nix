@@ -16,9 +16,9 @@
       package = pkgs.papirus-icon-theme;
     };
     cursorTheme = {
-      name = "Bibata-Modern-Classic";
+      name = "Bibata-Modern-Amber";
       package = pkgs.bibata-cursors;
-      size = 18;
+      size = 24;
     };
     gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
     gtk4.theme = config.gtk.theme;
@@ -41,8 +41,8 @@
       color-scheme = "prefer-dark";
       gtk-theme = "adw-gtk3-dark";
       icon-theme = "Papirus-Dark";
-      cursor-theme = "Bibata-Modern-Classic";
-      cursor-size = 18;
+      cursor-theme = "Bibata-Modern-Amber";
+      cursor-size = 24;
     };
 
     "org/gtk/settings/file-chooser" = {
@@ -56,8 +56,8 @@
     "org.cinnamon.desktop.interface" = {
       gtk-theme = "Stylix";
       icon-theme = "Papirus-Dark";
-      cursor-theme = "Bibata-Modern-Classic";
-      cursor-size = 18;
+      cursor-theme = "Bibata-Modern-Amber";
+      cursor-size = 24;
     };
   };
 

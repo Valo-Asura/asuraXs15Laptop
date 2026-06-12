@@ -73,7 +73,10 @@ private:
   bool running_ = true;
   bool configured_ = false;
   bool search_active_ = false;
+  bool wallhaven_mode_ = false;
+  int wallhaven_page_ = 1;
   std::string query_;
+  std::string status_;
   std::vector<Wallpaper> wallpapers_;
   int selected_ = 0;
 
@@ -105,6 +108,9 @@ private:
   void redraw();
   void apply_selected();
   void toggle_favorite();
+  void load_wallhaven();
+  void show_local();
+  void apply_random();
   void move_selection(int delta);
   void set_query(std::string query);
   void mark_benchmark_ready() const;

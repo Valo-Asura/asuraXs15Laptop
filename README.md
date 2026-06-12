@@ -34,7 +34,7 @@ new commands should use `#asura-xs15`.
 | Desktop | Hyprland `v0.55.3` from the official Hyprland flake plus Noctalia v5 shell |
 | Lockscreen | Noctalia IPC lock using `screenshots/lockscreen.png`; |
 | File manager | Nautilus, with `DBusActivatable=false` local desktop override |
-| Theme | Dark GTK/libadwaita settings, Papirus-Dark icons, Bibata Classic cursor |
+| Theme | Dark GTK/libadwaita settings, Papirus-Dark icons, Bibata Modern Amber cursor at 24 px |
 | Wallpaper | `SUPER+W` and `SUPER+SHIFT+W` open native `vibewallREzero`; images apply through Noctalia IPC, videos through `mpvpaper` |
 | Fan control | NBFC-Linux `0.5.2` plus NBFC-GTK `0.4.1` |
 | Fan profile | Declarative two-fan `Colorful X15 AT 22` config with `MaxSpeedValue = 255`, max-sensor ramping, and emergency thermal guard |
@@ -56,6 +56,7 @@ vibewall scan                 # index /home/asura/Wallpaper images/videos and bu
 vibewall toggle               # open/close the native picker used by SUPER+W
 vibewall apply FILE           # apply an image via Noctalia or a video via mpvpaper
 vibewall restore              # restore last wallpaper on Hyprland login
+vibewall wallhaven search "anime landscape" --page 1
 ```
 
 ## Repository Structure

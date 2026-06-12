@@ -50,6 +50,9 @@ vibewall wallhaven search "city night" --page 1
 | `Left/Right/Up/Down` | Navigate |
 | `Enter` | Apply selected |
 | `F` | Toggle favourite |
+| `W` | Search/cache Wallhaven and show remote previews |
+| `L` | Return to local wallpapers |
+| `R` | Apply random wallpaper |
 | `/` | Edit search |
 | `Backspace` | Delete search char |
 | `Escape` | Close |

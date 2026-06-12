@@ -1,5 +1,6 @@
 #include "picker/wayland_app.hpp"
 
+#include "core/wallhaven_client.hpp"
 #include "core/wallpaper_apply.hpp"
 #define namespace namespace_
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
@@ -129,6 +130,24 @@ void WaylandApp::setup_egl() {
 }
 
 void WaylandApp::load_wallpapers() {
+  if (wallhaven_mode_) {
+    wallpapers_.clear();
+    for (const auto &entry : db_.cached_wallhaven()) {
+      Wallpaper item;
+      item.path = entry.image_url;
+      item.name = "wallhaven-" + entry.id;
+      item.type = WallpaperType::Wallhaven;
+      item.thumb_path = entry.thumb_path;
+      item.width = entry.width;
+      item.height = entry.height;
+      item.added_at = entry.cached_at;
+      wallpapers_.push_back(std::move(item));
+    }
+    if (selected_ >= static_cast<int>(wallpapers_.size())) {
+      selected_ = std::max(0, static_cast<int>(wallpapers_.size()) - 1);
+    }
+    return;
+  }
   Filter filter;
   filter.query = query_;
   wallpapers_ = db_.list_wallpapers(filter);
@@ -139,7 +158,7 @@ void WaylandApp::load_wallpapers() {
 
 void WaylandApp::redraw() {
   load_wallpapers();
-  renderer_.render(wallpapers_, selected_, mode_, query_);
+  renderer_.render(wallpapers_, selected_, mode_, query_, wallhaven_mode_, status_);
   eglSwapBuffers(egl_display_, egl_surface_);
 }
 
@@ -147,9 +166,33 @@ void WaylandApp::apply_selected() {
   if (wallpapers_.empty() || selected_ < 0 || selected_ >= static_cast<int>(wallpapers_.size())) {
     return;
   }
-  const auto result = apply_wallpaper(db_, config_, wallpapers_[selected_]);
+  ApplyResult result;
+  if (wallpapers_[selected_].type == WallpaperType::Wallhaven) {
+    WallhavenEntry match;
+    for (const auto &entry : db_.cached_wallhaven()) {
+      if (entry.image_url == wallpapers_[selected_].path ||
+          "wallhaven-" + entry.id == wallpapers_[selected_].name) {
+        match = entry;
+        break;
+      }
+    }
+    if (match.id.empty()) {
+      result = {false, "wallhaven entry not found"};
+    } else {
+      try {
+        const auto downloaded = wallhaven_download(config_, match);
+        result = apply_path(db_, config_, downloaded.string(), WallpaperType::Image);
+      } catch (const std::exception &err) {
+        result = {false, err.what()};
+      }
+    }
+  } else {
+    result = apply_wallpaper(db_, config_, wallpapers_[selected_]);
+  }
   if (!result.ok) {
     std::cerr << "apply failed: " << result.message << '\n';
+    status_ = "APPLY FAILED";
+    redraw();
   } else if (config_.close_on_selection) {
     running_ = false;
   }
@@ -162,6 +205,43 @@ void WaylandApp::toggle_favorite() {
   const bool next = !wallpapers_[selected_].favorite;
   db_.set_favorite(wallpapers_[selected_].path, next);
   redraw();
+}
+
+void WaylandApp::load_wallhaven() {
+  if (!config_.enable_wallhaven) {
+    status_ = "WALLHAVEN DISABLED";
+    redraw();
+    return;
+  }
+  const std::string search = query_.empty() ? config_.wallhaven_default_query : query_;
+  try {
+    cache_wallhaven_search(db_, config_, search, wallhaven_page_);
+    wallhaven_mode_ = true;
+    selected_ = 0;
+    status_ = "WALLHAVEN " + search.substr(0, 28);
+  } catch (const std::exception &err) {
+    status_ = "WALLHAVEN ERROR";
+    std::cerr << "wallhaven failed: " << err.what() << '\n';
+  }
+  redraw();
+}
+
+void WaylandApp::show_local() {
+  wallhaven_mode_ = false;
+  status_ = "LOCAL WALLPAPERS";
+  selected_ = 0;
+  redraw();
+}
+
+void WaylandApp::apply_random() {
+  const auto result = apply_random_wallpaper(db_, config_);
+  if (!result.ok) {
+    status_ = "RANDOM FAILED";
+    std::cerr << "random failed: " << result.message << '\n';
+    redraw();
+  } else if (config_.close_on_selection) {
+    running_ = false;
+  }
 }
 
 void WaylandApp::move_selection(int delta) {
@@ -385,6 +465,31 @@ void WaylandApp::keyboard_key(void *data, wl_keyboard *, uint32_t, uint32_t, uin
     }
     return;
   }
+  if (app->search_active_) {
+    if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
+      app->search_active_ = false;
+      if (app->wallhaven_mode_) {
+        app->load_wallhaven();
+      } else {
+        app->redraw();
+      }
+      return;
+    }
+    if (sym == XKB_KEY_BackSpace) {
+      if (!app->query_.empty()) {
+        app->query_.pop_back();
+        app->set_query(app->query_);
+      }
+      return;
+    }
+    char text[8] = {};
+    const int n = xkb_state_key_get_utf8(app->xkb_state_, code, text, sizeof(text));
+    if (n > 0 && text[0] >= 32 && text[0] < 127) {
+      app->query_ += text;
+      app->set_query(app->query_);
+    }
+    return;
+  }
   if (sym == XKB_KEY_Return || sym == XKB_KEY_KP_Enter) {
     app->apply_selected();
     return;
@@ -420,6 +525,18 @@ void WaylandApp::keyboard_key(void *data, wl_keyboard *, uint32_t, uint32_t, uin
     app->redraw();
     return;
   }
+  if (sym == XKB_KEY_w || sym == XKB_KEY_W) {
+    app->load_wallhaven();
+    return;
+  }
+  if (sym == XKB_KEY_l || sym == XKB_KEY_L) {
+    app->show_local();
+    return;
+  }
+  if (sym == XKB_KEY_r || sym == XKB_KEY_R) {
+    app->apply_random();
+    return;
+  }
   if (sym == XKB_KEY_f || sym == XKB_KEY_F) {
     app->toggle_favorite();
     return;
@@ -427,21 +544,6 @@ void WaylandApp::keyboard_key(void *data, wl_keyboard *, uint32_t, uint32_t, uin
   if (sym == XKB_KEY_slash) {
     app->search_active_ = true;
     return;
-  }
-  if (app->search_active_ && sym == XKB_KEY_BackSpace) {
-    if (!app->query_.empty()) {
-      app->query_.pop_back();
-      app->set_query(app->query_);
-    }
-    return;
-  }
-  if (app->search_active_) {
-    char text[8] = {};
-    const int n = xkb_state_key_get_utf8(app->xkb_state_, code, text, sizeof(text));
-    if (n > 0 && text[0] >= 32 && text[0] < 127) {
-      app->query_ += text;
-      app->set_query(app->query_);
-    }
   }
 }
 
