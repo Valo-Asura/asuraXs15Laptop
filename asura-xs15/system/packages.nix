@@ -180,6 +180,20 @@ let
     };
   };
 
+  # Smart launcher: kills any running xdm-app first, then starts fresh.
+  # Needed because a second instance always segfaults on Wayland (GTK
+  # gtk_widget_get_scale_factor single-instance mutex bug in xdm 8.0.29).
+  xdmOpen = pkgs.writeShellScriptBin "xdm-open" ''
+    set -euo pipefail
+    # Stop the systemd service so it doesn't restart immediately
+    systemctl --user stop xdman.service 2>/dev/null || true
+    # Kill any lingering process
+    pkill -x xdm-app 2>/dev/null || true
+    sleep 0.3
+    # Pass any URL/file arguments through (for browser-extension integration)
+    exec ${xdmanGtk}/bin/xdman "$@"
+  '';
+
   hyprmod = pkgs.callPackage ./hyprmod.nix { };
 in
 {
@@ -310,6 +324,7 @@ in
       whatsappWeb
       whatsappWebDesktop
       xdmanGtk
+      xdmOpen
       piper # Linux GUI for Logitech G304/G305 DPI and button profiles
       solaar # Logitech receiver and wireless device manager
       mongodb-compass
@@ -345,12 +360,12 @@ in
     wantedBy = [ "graphical-session.target" ];
     unitConfig = {
       StartLimitBurst = 3;
-      StartLimitIntervalSec = 30;
+      StartLimitIntervalSec = 60;
     };
     serviceConfig = {
       ExecStart = "${xdmanGtk}/bin/xdman";
       Restart = "on-failure";
-      RestartSec = 5;
+      RestartSec = 15;
       Environment = "GDK_PIXBUF_MODULE_FILE=${pkgs.librsvg}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache";
     };
   };

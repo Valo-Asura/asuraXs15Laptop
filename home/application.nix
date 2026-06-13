@@ -241,7 +241,7 @@ in
       Name=Xtreme Download Manager
       GenericName=Download Manager
       Comment=Open Xtreme Download Manager
-      Exec=xdman %U
+      Exec=xdm-open %U
       TryExec=xdman
       Icon=xdm-logo
       Terminal=false
@@ -262,7 +262,7 @@ in
       Name=XDM
       GenericName=Download Manager
       Comment=Open Xtreme Download Manager
-      Exec=xdman %U
+      Exec=xdm-open %U
       TryExec=xdman
       Icon=xdm-logo
       Terminal=false
