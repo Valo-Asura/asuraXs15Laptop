@@ -30,7 +30,7 @@ in
         "SUPER SHIFT, E, exec, noctalia msg panel-toggle launcher /emo"
         "SUPER SHIFT, S, exec, noctalia msg screenshot-region"
         "SUPER SHIFT, W, exec, vibewall toggle"
-        "SUPER SHIFT, R, exec, asura-screen-record-toggle"
+        "SUPER SHIFT, R, exec, /run/current-system/sw/bin/asura-screen-record-toggle"
         "SUPER SHIFT, X, exec, noctalia msg screenshot-region"
         "SUPER, F2, exec, night-shift"
         "SUPER, N, exec, noctalia msg panel-toggle control-center"

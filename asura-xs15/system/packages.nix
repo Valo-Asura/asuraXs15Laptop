@@ -230,9 +230,23 @@ let
       [ -s "$pidfile" ] && cat "$pidfile"
     }
 
-    is_running() {
+    live_pid() {
       pid="$(read_pid || true)"
-      [ -n "''${pid:-}" ] && kill -0 "$pid" 2>/dev/null
+      if [ -n "''${pid:-}" ] && kill -0 "$pid" 2>/dev/null; then
+        printf '%s\n' "$pid"
+        return 0
+      fi
+      pid="$(pgrep -u "$(id -u)" -x wf-recorder | head -n 1 || true)"
+      if [ -n "''${pid:-}" ] && kill -0 "$pid" 2>/dev/null; then
+        printf '%s\n' "$pid" > "$pidfile"
+        printf '%s\n' "$pid"
+        return 0
+      fi
+      return 1
+    }
+
+    is_running() {
+      live_pid >/dev/null
     }
 
     elapsed_seconds() {
@@ -297,7 +311,7 @@ let
         notify "Screen recording is OFF" "No active recording"
         exit 0
       fi
-      pid="$(read_pid)"
+      pid="$(live_pid)"
       elapsed="$(format_elapsed "$(elapsed_seconds)")"
       file="$(cat "$filefile" 2>/dev/null || printf '%s' "$out_dir")"
       kill -CONT "$pid" 2>/dev/null || true
@@ -320,7 +334,7 @@ let
         status_recording
         exit 0
       fi
-      pid="$(read_pid)"
+      pid="$(live_pid)"
       kill -STOP "$pid" 2>/dev/null || true
       printf '%s\n' "$(date +%s)" > "$pausefile"
       notify "Screen recording paused" "Paused at $(format_elapsed "$(elapsed_seconds)")"
@@ -332,7 +346,7 @@ let
         notify "Screen recording is OFF" "No active recording"
         exit 0
       fi
-      pid="$(read_pid)"
+      pid="$(live_pid)"
       kill -CONT "$pid" 2>/dev/null || true
       rm -f "$pausefile"
       notify "Screen recording resumed" "Recording is currently ON - $(format_elapsed "$(elapsed_seconds)")"

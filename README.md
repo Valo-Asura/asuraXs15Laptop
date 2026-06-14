@@ -52,6 +52,7 @@ new commands should use `#asura-xs15`.
 | Performance | CachyOS kernel, `scx_lavd`, `ananicy-cpp` CachyOS rules, BBR, zram, irqbalance, delayed NVIDIA persistenced/cache warm, socket-only VM stack |
 | Power | `thermald` plus `tuned`; TLP disabled |
 | Downloads | Xtreme Download Manager GTK `8.0.29` pre-release with SVG pixbuf loader fix, user bridge, Firefox add-on, Chromium helper, and `xdm-app:` handlers |
+| Phone link | KDE Connect `kdeconnect-kde`; firewall discovery ports are opened by the NixOS module for phone pairing |
 | AI memory | Shared root at `/home/asura/.config/ai-unified-memory`; filesystem MCP is default, SQLite MCP is opt-in/lazy, facts are system-only |
 | Codex | Declarative `pkgs.codex` plus generated GitHub/Notion plugin config after rebuild |
 
@@ -79,6 +80,8 @@ xarchiver ARCHIVE             # open archives; Nautilus/PCManFM-Qt route archive
 asura-screen-record-toggle    # toggle wf-recorder into ~/Videos/Screenrecords
 asura-screen-record-toggle status
 asura-screen-record-toggle toggle-pause
+kdeconnect-app                # pair with phone; install KDE Connect on the S24 too
+kdeconnect-cli --list-devices # verify phone discovery/pairing from terminal
 ASURA_SKIP_FASTFETCH=1 foot   # skip the automatic fastfetch banner for one terminal
 ```
 
@@ -216,9 +219,18 @@ Important carry-overs:
 - Screen recording is a declared `asura-screen-record-toggle` wrapper around
   `wf-recorder`, used by the Noctalia left quick-actions and `SUPER+SHIFT+R`.
   It supports `status`, `toggle-pause`, `resume`, and elapsed-time
-  notifications.
+  notifications, and it adopts/stops any live `wf-recorder` owned by this user
+  if the PID file is stale.
+- KDE Connect is enabled through `programs.kdeconnect`, which installs the KDE
+  Connect app/CLI and opens TCP/UDP 1714-1764 for LAN discovery.
+- Noctalia is restarted after NetworkManager comes back during a rebuild, so
+  the network panel does not stay stuck on the stale startup probe.
 - Codex plugin declarations live in the generated `~/.codex/config.toml` block
   so rebuilds keep GitHub/Notion plugins enabled.
+- Antigravity does not get the latest `jnoortheen.nix-ide` symlink because its
+  embedded Code engine can lag the extension engine requirement. It keeps the
+  basic `bbenoist.Nix` extension and disables extension auto-update so a
+  manually pinned older Nix IDE version is not overwritten.
 - The `rescue-no-nvidia` boot specialization keeps the old rescue path
   declarative: multi-user target, Plymouth disabled, and temporary NVIDIA
   blacklist only for that entry.

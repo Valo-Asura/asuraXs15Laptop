@@ -43,6 +43,11 @@ in
       ];
     };
 
+    kdeconnect = {
+      enable = true;
+      package = pkgs.kdePackages.kdeconnect-kde;
+    };
+
     ssh.startAgent = true;
   };
 }

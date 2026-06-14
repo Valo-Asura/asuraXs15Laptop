@@ -73,6 +73,14 @@ in
           "$settings" > "$tmp"
         ${pkgs.coreutils}/bin/mv "$tmp" "$settings"
       fi
+      if [ "$editor" = Antigravity ] && [ -f "$settings" ]; then
+        tmp="$(${pkgs.coreutils}/bin/mktemp)"
+        ${pkgs.jq}/bin/jq \
+          '.["extensions.autoUpdate"] = false
+           | .["extensions.autoCheckUpdates"] = false' \
+          "$settings" > "$tmp"
+        ${pkgs.coreutils}/bin/mv "$tmp" "$settings"
+      fi
 
       if [ "$editor" != Cursor ] && [ "$editor" != Antigravity ] && [ -f "$settings" ] && ${pkgs.jq}/bin/jq -e '.["chatgpt.cliExecutable"] == "/run/current-system/sw/bin/codex"' "$settings" >/dev/null 2>&1; then
         tmp="$(${pkgs.coreutils}/bin/mktemp)"
@@ -115,7 +123,13 @@ in
       ${pkgs.coreutils}/bin/ln -sfn ${gitlensExtension} "$extensions_dir/eamodio.gitlens"
       ${pkgs.coreutils}/bin/ln -sfn ${githubThemeExtension} "$extensions_dir/github.github-vscode-theme"
       ${pkgs.coreutils}/bin/ln -sfn ${catppuccinIconsExtension} "$extensions_dir/catppuccin.catppuccin-vsc-icons"
-      ${pkgs.coreutils}/bin/ln -sfn ${nixIdeExtension} "$extensions_dir/jnoortheen.nix-ide"
+      if [ "$editor" = Antigravity ]; then
+        if [ -L "$extensions_dir/jnoortheen.nix-ide" ]; then
+          ${pkgs.coreutils}/bin/rm -f "$extensions_dir/jnoortheen.nix-ide"
+        fi
+      else
+        ${pkgs.coreutils}/bin/ln -sfn ${nixIdeExtension} "$extensions_dir/jnoortheen.nix-ide"
+      fi
       ${pkgs.coreutils}/bin/ln -sfn ${pythonExtension} "$extensions_dir/ms-python.python"
 
       # VS Code caches extension locations here. Removing it clears stale

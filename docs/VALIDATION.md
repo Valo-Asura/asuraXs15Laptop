@@ -34,6 +34,11 @@ command -v xdm-open
 command -v codex
 command -v asura-screen-record-toggle
 asura-screen-record-toggle status
+command -v kdeconnect-app
+command -v kdeconnect-cli
+kdeconnect-cli --list-devices || true
+systemctl status NetworkManager --no-pager
+nmcli general status
 xdg-mime query default x-scheme-handler/xdm-app
 xdg-mime query default x-scheme-handler/xdm+app
 systemctl --user is-enabled xdman.service || true
@@ -99,7 +104,10 @@ Expected values:
 | XDM scheme handlers | `xdm-app.desktop` |
 | XDM browser helper | `/opt/xdman/chrome-extension` exists; Brave/Chrome/Chromium launchers load it |
 | XDM browser monitor | `xdman.service` is not enabled at boot; browser extension/protocol handlers remain installed and `xdm-open` starts XDM on demand |
-| Screen recorder | `asura-screen-record-toggle` exists; Noctalia left quick-actions and `SUPER+SHIFT+R` call it; `status` shows elapsed state and `toggle-pause` pauses/resumes |
+| Screen recorder | `asura-screen-record-toggle` exists; Noctalia left quick-actions and `SUPER+SHIFT+R` call it; `status` shows elapsed state, `toggle-pause` pauses/resumes, and stale PID files do not start duplicate captures |
+| KDE Connect | `programs.kdeconnect` enabled; `kdeconnect-app` and `kdeconnect-cli` installed; NixOS module opens TCP/UDP 1714-1764 |
+| NetworkManager panel | NetworkManager is active and `noctalia-networkmanager-refresh.service` refreshes Noctalia after NetworkManager restarts |
+| Antigravity Nix extension | latest `jnoortheen.nix-ide` is not force-symlinked into Antigravity; auto-update is disabled there so an older compatible manual install can stay pinned |
 | Codex CLI | `/run/current-system/sw/bin/codex` exists after rebuild |
 | Codex plugins | generated `~/.codex/config.toml` keeps GitHub and Notion plugin blocks |
 | AI memory MCP | default editor config includes `ai-memory-files`; SQLite MCP is only in opt-in config |
