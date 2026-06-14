@@ -19,9 +19,8 @@ alias fastfetch="fastfetch --processing-timeout 200 -c ~/.config/fastfetch/confi
 alias ff="fastfetch"
 
 function fish_greeting
-    if test "$ASURA_SHOW_SHELL_BANNER" = "1"
-        fastfetch
-    end
+    test "$ASURA_SKIP_FASTFETCH" = "1"; and return
+    fastfetch
 end
 
 string match -q "$TERM_PROGRAM" "kiro" and . (kiro --locate-shell-integration-path fish)

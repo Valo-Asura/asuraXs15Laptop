@@ -77,7 +77,9 @@ asura-video-wallpaper-stop    # stop mpvpaper and clear video wallpaper state
 xdman                         # launch Xtreme Download Manager; launcher uses the same wrapper
 xarchiver ARCHIVE             # open archives; Nautilus/PCManFM-Qt route archive MIME here
 asura-screen-record-toggle    # toggle wf-recorder into ~/Videos/Screenrecords
-ASURA_SHOW_SHELL_BANNER=1 foot # optional fastfetch banner; default Foot startup is quiet/fast
+asura-screen-record-toggle status
+asura-screen-record-toggle toggle-pause
+ASURA_SKIP_FASTFETCH=1 foot   # skip the automatic fastfetch banner for one terminal
 ```
 
 ## Repository Structure
@@ -209,10 +211,12 @@ Important carry-overs:
   through the bundled `/opt/xdman/chrome-extension`, Chromium-family launchers,
   and the Firefox AMO add-on; the app starts on explicit launcher/protocol use.
   The wrapper exports the `librsvg` pixbuf loader so XDM can render SVG icons.
-- Foot startup is kept quiet by default: no automatic tmux exec and no automatic
-  fastfetch unless `ASURA_SHOW_SHELL_BANNER=1` is set.
+- Foot does not auto-exec tmux. Fish opens with the declared NixOS fastfetch
+  banner; set `ASURA_SKIP_FASTFETCH=1` for an emergency bare shell.
 - Screen recording is a declared `asura-screen-record-toggle` wrapper around
-  `wf-recorder`, used by the Noctalia left quick-action and `SUPER+SHIFT+R`.
+  `wf-recorder`, used by the Noctalia left quick-actions and `SUPER+SHIFT+R`.
+  It supports `status`, `toggle-pause`, `resume`, and elapsed-time
+  notifications.
 - Codex plugin declarations live in the generated `~/.codex/config.toml` block
   so rebuilds keep GitHub/Notion plugins enabled.
 - The `rescue-no-nvidia` boot specialization keeps the old rescue path

@@ -76,6 +76,9 @@ The picker toolbar exposes local and Wallhaven sources:
 
 Wallhaven selection is intentionally two-step: clicking a remote card selects it.
 Use `D`/`DOWNLOAD` to save it only, or `Enter`/`APPLY` to download and apply.
+WEB search, sorting, and load-more requests run on a background worker; while a
+page is in flight, the picker keeps handling input and reports `WEB STILL
+LOADING` for overlapping requests.
 
 ## Commands
 
@@ -139,7 +142,7 @@ Tested proof on 2026-06-12:
 | Picker modes | Slice, grid, hex, mosaic, and Wallhaven screenshots captured with `grim` |
 | Transparent overlay | `screenshots/vibewallrezero-transparent-overlay.png` shows active VS Code workspace visible behind the centered picker |
 | Image apply | Built package applied `/home/asura/Wallpaper/radha-krishna-5120x2880-14416.png`; `noctalia msg wallpaper-get` returned the same path |
-| Wallhaven | CLI search returns results; browser opens cached previews immediately; stale bad previews are skipped |
+| Wallhaven | CLI search returns results; browser opens cached previews immediately; WEB page loads are asynchronous; stale bad previews are skipped |
 | Daemon toggle | `picker_pid` opens then returns to `-1` after close |
 | Video apply | `mpvpaper` starts for video and is stopped after image restore |
 | Battery guard | `asura-video-wallpaper-battery-guard.timer` is enabled and suspends `mpvpaper` on battery |

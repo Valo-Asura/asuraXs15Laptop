@@ -78,7 +78,7 @@ order = [ "dynamic_island", "left_bar" ]
     auto_hide = true
     background_opacity = 0.88
     capsule = false
-    center = [ "screenshot_btn", "open_screenshots_btn", "record_btn", "open_recordings_btn", "google_lens_btn" ]
+    center = [ "screenshot_btn", "open_screenshots_btn", "record_btn", "record_pause_btn", "record_status_btn", "open_recordings_btn", "google_lens_btn" ]
     end = []
     margin_edge = 8
     margin_ends = 400
@@ -327,6 +327,20 @@ command = "asura-screen-record-toggle"
 glyph = "video"
 scale = 1.3500000000000001
 tooltip = "Toggle Screen Recording"
+type = "custom_button"
+
+[widget.record_pause_btn]
+command = "asura-screen-record-toggle toggle-pause"
+glyph = "player-pause"
+scale = 1.3500000000000001
+tooltip = "Pause or Resume Recording"
+type = "custom_button"
+
+[widget.record_status_btn]
+command = "asura-screen-record-toggle status"
+glyph = "clock"
+scale = 1.3500000000000001
+tooltip = "Recording Status"
 type = "custom_button"
 
 [widget.screenshot_btn]

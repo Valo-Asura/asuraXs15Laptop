@@ -510,14 +510,12 @@ in
       '';
     };
 
-    # Keep terminal startup fast. Run `ff`/`fastfetch-smart` explicitly, or set
-    # ASURA_SHOW_SHELL_BANNER=1 for a temporary banner.
+    # Keep the normal banner declarative while retaining an emergency fast shell.
     fish_greeting = {
       body = ''
-        if test "$ASURA_SHOW_SHELL_BANNER" = "1"
-          fastfetch-smart
-          echo ""
-        end
+        test "$ASURA_SKIP_FASTFETCH" = "1"; and return
+        fastfetch-smart
+        echo ""
       '';
     };
 

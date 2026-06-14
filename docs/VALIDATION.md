@@ -33,6 +33,7 @@ command -v xdman
 command -v xdm-open
 command -v codex
 command -v asura-screen-record-toggle
+asura-screen-record-toggle status
 xdg-mime query default x-scheme-handler/xdm-app
 xdg-mime query default x-scheme-handler/xdm+app
 systemctl --user is-enabled xdman.service || true
@@ -98,7 +99,7 @@ Expected values:
 | XDM scheme handlers | `xdm-app.desktop` |
 | XDM browser helper | `/opt/xdman/chrome-extension` exists; Brave/Chrome/Chromium launchers load it |
 | XDM browser monitor | `xdman.service` is not enabled at boot; browser extension/protocol handlers remain installed and `xdm-open` starts XDM on demand |
-| Screen recorder | `asura-screen-record-toggle` exists; Noctalia left quick-action and `SUPER+SHIFT+R` call it |
+| Screen recorder | `asura-screen-record-toggle` exists; Noctalia left quick-actions and `SUPER+SHIFT+R` call it; `status` shows elapsed state and `toggle-pause` pauses/resumes |
 | Codex CLI | `/run/current-system/sw/bin/codex` exists after rebuild |
 | Codex plugins | generated `~/.codex/config.toml` keeps GitHub and Notion plugin blocks |
 | AI memory MCP | default editor config includes `ai-memory-files`; SQLite MCP is only in opt-in config |
@@ -108,7 +109,7 @@ Expected values:
 | Vibewall toggle | first `vibewall toggle` starts daemon/picker; close cleans picker |
 | Vibewall transparent overlay | active workspace remains visible behind centered toolbar/cards; proof screenshot is `screenshots/vibewallrezero-transparent-overlay.png` |
 | Vibewall image apply | `vibewall apply` returns `ok` and `noctalia msg wallpaper-get` returns the requested path |
-| Vibewall Wallhaven | cached browser opens; `D`/`DOWNLOAD` saves selected remote wallpaper and `Enter`/`APPLY` downloads then applies |
+| Vibewall Wallhaven | cached browser opens immediately; WEB page loading runs in the background; `D`/`DOWNLOAD` saves selected remote wallpaper and `Enter`/`APPLY` downloads then applies |
 | Vibewall benchmark | daemon stays small, picker is event-driven at idle |
 | Removed launchers | no Hyprlock, no Wofi |
 | Boot critical path | `nvidia-persistenced.service` should not gate `graphical.target` after reboot |

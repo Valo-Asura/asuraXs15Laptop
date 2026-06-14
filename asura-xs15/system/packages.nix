@@ -211,25 +211,158 @@ let
 
     runtime_dir="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
     pidfile="$runtime_dir/asura-screen-record.pid"
+    startfile="$runtime_dir/asura-screen-record.started"
+    pausefile="$runtime_dir/asura-screen-record.paused"
+    filefile="$runtime_dir/asura-screen-record.file"
+    logfile="$runtime_dir/asura-screen-record.log"
     out_dir="$HOME/Videos/Screenrecords"
     mkdir -p "$out_dir"
 
-    if [ -s "$pidfile" ]; then
-      pid="$(cat "$pidfile")"
-      if kill -0 "$pid" 2>/dev/null; then
-        kill -INT "$pid" 2>/dev/null || true
-        rm -f "$pidfile"
-        notify-send "Screen recording saved" "$out_dir" --icon=media-record || true
+    notify() {
+      notify-send "$@" --icon=media-record || true
+    }
+
+    cleanup_state() {
+      rm -f "$pidfile" "$startfile" "$pausefile" "$filefile"
+    }
+
+    read_pid() {
+      [ -s "$pidfile" ] && cat "$pidfile"
+    }
+
+    is_running() {
+      pid="$(read_pid || true)"
+      [ -n "''${pid:-}" ] && kill -0 "$pid" 2>/dev/null
+    }
+
+    elapsed_seconds() {
+      if [ ! -s "$startfile" ]; then
+        printf '0\n'
+        return
+      fi
+      now="$(date +%s)"
+      start="$(cat "$startfile" 2>/dev/null || printf '%s' "$now")"
+      printf '%s\n' "$((now - start))"
+    }
+
+    format_elapsed() {
+      total="$1"
+      printf '%02d:%02d:%02d\n' "$((total / 3600))" "$(((total % 3600) / 60))" "$((total % 60))"
+    }
+
+    status_recording() {
+      if is_running; then
+        elapsed="$(format_elapsed "$(elapsed_seconds)")"
+        file="$(cat "$filefile" 2>/dev/null || printf '%s' "$out_dir")"
+        if [ -s "$pausefile" ]; then
+          notify "Screen recording paused" "Recording is paused - $elapsed"$'\n'"$file"
+        else
+          notify "Screen recording is currently ON" "Elapsed: $elapsed"$'\n'"$file"
+        fi
         exit 0
       fi
-      rm -f "$pidfile"
-    fi
+      cleanup_state
+      notify "Screen recording is OFF" "No active recording"
+    }
 
-    file="$out_dir/recording-$(date +%Y%m%d-%H%M%S).mp4"
-    notify-send "Screen recording started" "$file" --icon=media-record || true
-    wf-recorder -f "$file" >/tmp/asura-screen-record.log 2>&1 &
-    echo "$!" > "$pidfile"
-    disown
+    start_recording() {
+      if is_running; then
+        status_recording
+        exit 0
+      fi
+      cleanup_state
+
+      file="$out_dir/recording-$(date +%Y%m%d-%H%M%S).mp4"
+      wf-recorder -f "$file" >"$logfile" 2>&1 &
+      pid="$!"
+      printf '%s\n' "$pid" > "$pidfile"
+      printf '%s\n' "$(date +%s)" > "$startfile"
+      printf '%s\n' "$file" > "$filefile"
+      sleep 0.25
+
+      if ! kill -0 "$pid" 2>/dev/null; then
+        message="$(tail -n 5 "$logfile" 2>/dev/null || true)"
+        cleanup_state
+        notify "Screen recording failed" "wf-recorder could not start"$'\n'"$message"
+        exit 1
+      fi
+
+      disown "$pid" 2>/dev/null || true
+      notify "Screen recording started" "Recording is currently ON - 00:00:00"$'\n'"$file"
+    }
+
+    stop_recording() {
+      if ! is_running; then
+        cleanup_state
+        notify "Screen recording is OFF" "No active recording"
+        exit 0
+      fi
+      pid="$(read_pid)"
+      elapsed="$(format_elapsed "$(elapsed_seconds)")"
+      file="$(cat "$filefile" 2>/dev/null || printf '%s' "$out_dir")"
+      kill -CONT "$pid" 2>/dev/null || true
+      kill -INT "$pid" 2>/dev/null || true
+      for _ in $(seq 1 50); do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.1
+      done
+      cleanup_state
+      notify "Screen recording saved" "Duration: $elapsed"$'\n'"$file"
+    }
+
+    pause_recording() {
+      if ! is_running; then
+        cleanup_state
+        notify "Screen recording is OFF" "No active recording"
+        exit 0
+      fi
+      if [ -s "$pausefile" ]; then
+        status_recording
+        exit 0
+      fi
+      pid="$(read_pid)"
+      kill -STOP "$pid" 2>/dev/null || true
+      printf '%s\n' "$(date +%s)" > "$pausefile"
+      notify "Screen recording paused" "Paused at $(format_elapsed "$(elapsed_seconds)")"
+    }
+
+    resume_recording() {
+      if ! is_running; then
+        cleanup_state
+        notify "Screen recording is OFF" "No active recording"
+        exit 0
+      fi
+      pid="$(read_pid)"
+      kill -CONT "$pid" 2>/dev/null || true
+      rm -f "$pausefile"
+      notify "Screen recording resumed" "Recording is currently ON - $(format_elapsed "$(elapsed_seconds)")"
+    }
+
+    case "''${1:-toggle}" in
+      start) start_recording ;;
+      stop) stop_recording ;;
+      pause) pause_recording ;;
+      resume) resume_recording ;;
+      toggle-pause)
+        if [ -s "$pausefile" ]; then
+          resume_recording
+        else
+          pause_recording
+        fi
+        ;;
+      status) status_recording ;;
+      toggle)
+        if is_running; then
+          stop_recording
+        else
+          start_recording
+        fi
+        ;;
+      *)
+        printf 'usage: asura-screen-record-toggle [toggle|start|stop|pause|resume|toggle-pause|status]\n' >&2
+        exit 64
+        ;;
+    esac
   '';
 
   hyprmod = pkgs.callPackage ./hyprmod.nix { };
