@@ -11,6 +11,8 @@
     ./display.nix
     ./login.nix
     ./hardware.nix
+    ./android.nix
+    ./kdeconnect.nix
     ./audio.nix
     ./services.nix
     ./mysql.nix

@@ -52,7 +52,8 @@ new commands should use `#asura-xs15`.
 | Performance | CachyOS kernel, `scx_lavd`, `ananicy-cpp` CachyOS rules, BBR, zram, irqbalance, delayed NVIDIA persistenced/cache warm, socket-only VM stack |
 | Power | `thermald` plus `tuned`; TLP disabled |
 | Downloads | Xtreme Download Manager GTK `8.0.29` pre-release with SVG pixbuf loader fix, user bridge, Firefox add-on, Chromium helper, and `xdm-app:` handlers |
-| Phone link | KDE Connect `kdeconnect-kde`; firewall discovery ports are opened by the NixOS module for phone pairing |
+| Phone link | KDE Connect `kdeconnect-kde`; `kdeconnectd` starts with Hyprland, firewall discovery ports are opened by the NixOS module, and `hypr-kdeconnect-fix` routes RemoteDesktop input for phone-to-laptop mouse/keyboard control |
+| Android recovery | `android-tools` (`adb`, `fastboot`, `logcat`), `heimdall` for Samsung download-mode recovery, `scrcpy`, and MTP mount helpers; USB access is handled by systemd uaccess |
 | AI memory | Shared root at `/home/asura/.config/ai-unified-memory`; filesystem MCP is default, SQLite MCP is opt-in/lazy, facts are system-only |
 | Codex | Declarative `pkgs.codex` plus generated GitHub/Notion plugin config after rebuild |
 
@@ -82,6 +83,11 @@ asura-screen-record-toggle status
 asura-screen-record-toggle toggle-pause
 kdeconnect-app                # pair with phone; install KDE Connect on the S24 too
 kdeconnect-cli --list-devices # verify phone discovery/pairing from terminal
+hypr-kdeconnect-portal --self-test-motion 120 0 # verify laptop pointer injection after login
+adb devices                   # verify Android USB debugging/recovery access
+fastboot devices              # verify bootloader/fastboot mode when a device is in that mode
+heimdall detect               # verify Samsung download-mode detection
+scrcpy                        # mirror/control Android over adb
 ASURA_SKIP_FASTFETCH=1 foot   # skip the automatic fastfetch banner for one terminal
 ```
 
@@ -226,7 +232,13 @@ Important carry-overs:
   notifications, and it adopts/stops any live `wf-recorder` owned by this user
   if the PID file is stale.
 - KDE Connect is enabled through `programs.kdeconnect`, which installs the KDE
-  Connect app/CLI and opens TCP/UDP 1714-1764 for LAN discovery.
+  Connect app/CLI and opens TCP/UDP 1714-1764 for LAN discovery. Phone-to-PC
+  mouse control needs the RemoteDesktop portal on Hyprland, so this config pins
+  `gfhdhytghd/hypr-kdeconnect-fix` and routes only
+  `org.freedesktop.impl.portal.RemoteDesktop` to it.
+- Android USB recovery is declarative. Use `adb devices` for normal USB
+  debugging, `fastboot devices` in bootloader/fastboot mode, and
+  `heimdall detect` in Samsung download mode.
 - Noctalia is restarted after NetworkManager comes back during a rebuild, so
   the network panel does not stay stuck on the stale startup probe.
 - Codex plugin declarations live in the generated `~/.codex/config.toml` block

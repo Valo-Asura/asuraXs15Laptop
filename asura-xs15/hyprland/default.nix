@@ -20,6 +20,7 @@ let
 
   startupCommands = [
     "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE XDG_SESSION_CLASS XDG_SESSION_ID XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS"
+    "kdeconnectd"
     "vibewall restore"
     "asura-apply-cursor-theme"
     "asura-monitor-guard --daemon"

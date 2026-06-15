@@ -36,7 +36,22 @@ command -v asura-screen-record-toggle
 asura-screen-record-toggle status
 command -v kdeconnect-app
 command -v kdeconnect-cli
+command -v hypr-kdeconnect-portal
+command -v hypr-kdeconnect-fix
 kdeconnect-cli --list-devices || true
+systemctl --user is-active hypr-kdeconnect-portal.service || true
+busctl --user introspect \
+  org.freedesktop.portal.Desktop \
+  /org/freedesktop/portal/desktop \
+  org.freedesktop.portal.RemoteDesktop
+hypr-kdeconnect-portal --self-test-motion 120 0
+command -v adb
+command -v fastboot
+command -v heimdall
+command -v scrcpy
+adb devices || true
+fastboot devices || true
+heimdall detect || true
 systemctl status NetworkManager --no-pager
 nmcli general status
 xdg-mime query default x-scheme-handler/xdm-app
@@ -106,6 +121,8 @@ Expected values:
 | XDM browser monitor | `xdman.service` is not enabled at boot; browser extension/protocol handlers remain installed and `xdm-open` starts XDM on demand |
 | Screen recorder | `asura-screen-record-toggle` exists; Noctalia left quick-actions and `SUPER+SHIFT+R` call it; `status` shows elapsed state, `toggle-pause` pauses/resumes, and stale PID files do not start duplicate captures |
 | KDE Connect | `programs.kdeconnect` enabled; `kdeconnect-app` and `kdeconnect-cli` installed; NixOS module opens TCP/UDP 1714-1764 |
+| KDE Connect remote input | `kdeconnectd` starts from Hyprland; `hypr-kdeconnect-portal` exists; `org.freedesktop.impl.portal.RemoteDesktop` is routed to `hypr-kdeconnect`; phone touchpad can move the laptop pointer |
+| Android recovery tools | `adb`, `fastboot`, `heimdall`, `scrcpy`, `jmtpfs`, and `mtpfs` are installed; USB device ACLs are handled by systemd uaccess |
 | NetworkManager panel | NetworkManager is active and `noctalia-networkmanager-refresh.service` refreshes Noctalia after NetworkManager restarts |
 | Antigravity Nix extension | latest `jnoortheen.nix-ide` is not force-symlinked into Antigravity; auto-update is disabled there so an older compatible manual install can stay pinned |
 | Codex CLI | `/run/current-system/sw/bin/codex` exists after rebuild |
