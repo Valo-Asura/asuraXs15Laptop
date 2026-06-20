@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+profile="${1:-status}"
+uid="$(id -u)"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/asura-shell"
+state_file="$state_dir/current"
+ricelin_path="@RICELIN_QUICKSHELL_PATH@"
+dotfiles_path="@DOTFILES_QUICKSHELL_PATH@"
+caelestia_bin="@CAELESTIA_SHELL_BIN@"
+tide_island_bin="@TIDE_ISLAND_BIN@"
+asura_island_path="@ASURA_ISLAND_PATH@"
+waybar_bin="@WAYBAR_BIN@"
+noctalia_bin="@NOCTALIA_BIN@"
+
+mkdir -p "$state_dir"
+
+notify() {
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -a asura-shell-switch "$@" 2>/dev/null || true
+  fi
+}
+
+kill_qs_matching() {
+  local pattern="$1"
+  local pids
+  pids="$(
+    pgrep -u "$uid" -a 'qs|quickshell' 2>/dev/null \
+      | grep -E "$pattern" \
+      | awk '{print $1}' \
+      || true
+  )"
+  [ -n "$pids" ] || return 0
+
+  while read -r pid; do
+    [ -n "$pid" ] || continue
+    kill "$pid" 2>/dev/null || true
+  done <<< "$pids"
+
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    local alive=""
+    while read -r pid; do
+      [ -n "$pid" ] || continue
+      if kill -0 "$pid" 2>/dev/null; then
+        alive=1
+        break
+      fi
+    done <<< "$pids"
+    [ -z "$alive" ] && return 0
+    sleep 0.1
+  done
+
+  while read -r pid; do
+    [ -n "$pid" ] || continue
+    kill -KILL "$pid" 2>/dev/null || true
+  done <<< "$pids"
+}
+
+stop_caelestia() {
+  pkill -u "$uid" -x caelestia-shell 2>/dev/null || true
+  kill_qs_matching 'caelestia-shell|/etc/xdg/quickshell/caelestia|asura-xs15/quickshell/profiles/caelestia'
+}
+
+stop_ricelin() {
+  kill_qs_matching "$ricelin_path|asura-ricelin|configs/quickshell/(pill|topbar|sidebar|launcher|rishot|lock)"
+}
+
+stop_dotfiles() {
+  kill_qs_matching "$dotfiles_path|asura-dotfiles|dotfiles-main/quickshell"
+}
+
+stop_tide_island() {
+  pkill -u "$uid" -x tide-island 2>/dev/null || true
+  kill_qs_matching 'tide-island|/etc/xdg/quickshell/tide-island|/share/tide-island|asura-xs15/quickshell/profiles/tide-island'
+}
+
+stop_asura_island() {
+  kill_qs_matching "$asura_island_path|asura-island-shell"
+}
+
+stop_waybar() {
+  pkill -u "$uid" -x waybar 2>/dev/null || true
+}
+
+stop_quickshell_profiles() {
+  stop_caelestia
+  stop_ricelin
+  stop_dotfiles
+  stop_tide_island
+  stop_asura_island
+  stop_waybar
+}
+
+stop_noctalia() {
+  [ "${ASURA_SHELL_KEEP_NOCTALIA:-0}" = 1 ] && return 0
+
+  if systemctl --user show noctalia.service >/dev/null 2>&1; then
+    local kill_mode
+    kill_mode="$(systemctl --user show noctalia.service -p KillMode --value 2>/dev/null || true)"
+    if [ "$kill_mode" != "process" ]; then
+      notify "Rebuild required before switching shells" "noctalia.service KillMode is $kill_mode; refusing to stop it because app children could be killed."
+      echo "Refusing to stop noctalia.service while KillMode=$kill_mode. Rebuild first so KillMode=process." >&2
+      return 1
+    fi
+    systemctl --user stop noctalia.service 2>/dev/null || true
+  fi
+
+  pkill -u "$uid" -x noctalia 2>/dev/null || true
+}
+
+start_detached() {
+  setsid -f "$@" >/tmp/asura-shell-switch.log 2>&1
+}
+
+start_noctalia() {
+  stop_quickshell_profiles
+  if systemctl --user show noctalia.service >/dev/null 2>&1; then
+    systemctl --user start noctalia.service
+  elif ! pgrep -u "$uid" -x noctalia >/dev/null 2>&1; then
+    start_detached "$noctalia_bin"
+  fi
+  printf '%s\n' noctalia > "$state_file"
+  notify "Noctalia selected" "Stable Hyprland shell is active."
+}
+
+start_caelestia() {
+  stop_quickshell_profiles
+  stop_noctalia
+  start_detached "$caelestia_bin"
+  printf '%s\n' caelestia > "$state_file"
+  notify "Caelestia selected" "Experimental Quickshell profile is active under Hyprland."
+}
+
+start_ricelin() {
+  stop_quickshell_profiles
+  stop_noctalia
+  start_detached qs -p "$ricelin_path/pill"
+  printf '%s\n' ricelin > "$state_file"
+  notify "Ricelin selected" "Experimental pill Quickshell profile is active."
+}
+
+start_dotfiles() {
+  stop_quickshell_profiles
+  stop_noctalia
+  start_detached qs -p "$dotfiles_path"
+  printf '%s\n' dotfiles > "$state_file"
+  notify "Dotfiles selected" "Imported dotfiles Quickshell profile is active."
+}
+
+start_tide_island() {
+  stop_quickshell_profiles
+  stop_noctalia
+  start_detached "$tide_island_bin"
+  printf '%s\n' tide-island > "$state_file"
+  notify "Tide Island selected" "Dynamic Island Quickshell profile is active."
+}
+
+start_asura_island() {
+  stop_quickshell_profiles
+  stop_noctalia
+  start_detached qs -p "$asura_island_path"
+  printf '%s\n' asura-island > "$state_file"
+  notify "Asura Island selected" "Standalone Dynamic Island shell is active."
+}
+
+start_waybar() {
+  stop_quickshell_profiles
+  stop_noctalia
+  start_detached "$waybar_bin"
+  printf '%s\n' waybar > "$state_file"
+  notify "Waybar selected" "Imported Waybar bar is active."
+}
+
+status() {
+  printf 'selected=%s\n' "$(cat "$state_file" 2>/dev/null || printf noctalia)"
+  printf 'session=%s/%s\n' "${XDG_CURRENT_DESKTOP:-unknown}" "${XDG_SESSION_TYPE:-unknown}"
+  printf 'processes:\n'
+  pgrep -u "$uid" -a 'noctalia|caelestia-shell|tide-island|waybar|qs|quickshell' 2>/dev/null || true
+}
+
+case "$profile" in
+  noctalia|noctalia-v5|default)
+    start_noctalia
+    ;;
+  caelestia|caelestia-hyprland)
+    start_caelestia
+    ;;
+  ricelin)
+    start_ricelin
+    ;;
+  dotfiles|dotfiles-quickshell)
+    start_dotfiles
+    ;;
+  tide-island|tide)
+    start_tide_island
+    ;;
+  asura-island|island)
+    start_asura_island
+    ;;
+  waybar)
+    start_waybar
+    ;;
+  stop-quickshell)
+    stop_quickshell_profiles
+    printf '%s\n' noctalia > "$state_file"
+    ;;
+  stop)
+    stop_quickshell_profiles
+    stop_noctalia
+    rm -f "$state_file"
+    ;;
+  status)
+    status
+    ;;
+  *)
+    cat >&2 <<'USAGE'
+usage: asura-quickshell-switch <profile>
+
+profiles:
+  noctalia          Stable Noctalia v5 Hyprland shell
+  caelestia         Experimental Caelestia Quickshell profile
+  ricelin           Experimental Ricelin pill Quickshell profile
+  dotfiles          Experimental imported dotfiles Quickshell profile
+  tide-island       Experimental Tide Island dynamic island profile
+  asura-island      Standalone asura-island-shell profile from ~/Projects
+  waybar            Imported Waybar bar profile
+  stop-quickshell   Stop optional Quickshell profiles and keep Noctalia selected
+  stop              Stop managed shell processes
+  status            Show selected profile and live shell processes
+USAGE
+    exit 64
+    ;;
+esac

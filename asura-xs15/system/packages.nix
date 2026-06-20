@@ -8,9 +8,29 @@
 
 let
   whatsappWeb = pkgs.writeShellScriptBin "whatsapp-web" ''
+    unset ELECTRON_RUN_AS_NODE ELECTRON_NO_ATTACH_CONSOLE GTK_MODULES
+
+    export FONTCONFIG_FILE=/etc/fonts/fonts.conf
+    export FONTCONFIG_PATH=/etc/fonts
+
+    # Keep this chat webapp on the Intel/Mesa path. Chromium/Dawn can otherwise
+    # wake the NVIDIA dGPU for WebGPU/Vulkan probes and print noisy adapter logs.
+    export DRI_PRIME=0
+    export __NV_PRIME_RENDER_OFFLOAD=0
+    export __EGL_VENDOR_LIBRARY_FILENAMES=/run/opengl-driver/share/glvnd/egl_vendor.d/50_mesa.json
+    export VK_ICD_FILENAMES=/run/opengl-driver/share/vulkan/icd.d/intel_icd.x86_64.json
+
     exec ${pkgs.google-chrome}/bin/google-chrome-stable \
       --app=https://web.whatsapp.com \
       --class=whatsapp-web \
+      --name=whatsapp-web \
+      --no-first-run \
+      --ozone-platform=wayland \
+      --use-gl=egl \
+      --use-angle=gl \
+      --disable-features=WebGPU,Vulkan,DefaultANGLEVulkan,VulkanFromANGLE \
+      --disable-logging \
+      --log-level=3 \
       "$@"
   '';
 
@@ -379,6 +399,105 @@ let
     esac
   '';
 
+  asuraScreenshot = pkgs.writeShellScriptBin "asura-screenshot" ''
+    set -euo pipefail
+
+    export PATH="${
+      lib.makeBinPath [
+        pkgs.coreutils
+        pkgs.grim
+        pkgs.hyprland
+        pkgs.jq
+        pkgs.libnotify
+        pkgs.slurp
+        pkgs.swappy
+        pkgs.wl-clipboard
+      ]
+    }:$PATH"
+
+    mode="''${1:-full}"
+    out_dir="''${XDG_SCREENSHOTS_DIR:-$HOME/Pictures/Screenshots}"
+    mkdir -p "$out_dir"
+
+    timestamp="$(date +%Y%m%d-%H%M%S)"
+    file="$out_dir/screenshot-$timestamp.png"
+
+    notify() {
+      notify-send -a asura-screenshot "$@" --icon=applets-screenshooter >/dev/null 2>&1 || true
+    }
+
+    copy_file() {
+      wl-copy --type image/png < "$file" >/dev/null 2>&1 || true
+    }
+
+    focused_output_geometry() {
+      hyprctl monitors -j 2>/dev/null \
+        | jq -r 'map(select(.focused == true))[0] // .[0] // empty | "\(.x),\(.y) \(.width)x\(.height)"' \
+        2>/dev/null
+    }
+
+    active_window_geometry() {
+      hyprctl activewindow -j 2>/dev/null \
+        | jq -r 'select((.mapped // true) == true) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"' \
+        2>/dev/null
+    }
+
+    capture_region() {
+      geometry="$(slurp 2>/dev/null || true)"
+      [ -n "$geometry" ] || exit 0
+      grim -g "$geometry" "$file"
+    }
+
+    capture_output() {
+      geometry="$(focused_output_geometry)"
+      if [ -n "$geometry" ]; then
+        grim -g "$geometry" "$file"
+      else
+        grim "$file"
+      fi
+    }
+
+    capture_window() {
+      geometry="$(active_window_geometry)"
+      if [ -n "$geometry" ]; then
+        grim -g "$geometry" "$file"
+      else
+        grim "$file"
+      fi
+    }
+
+    case "$mode" in
+      full|screen|all)
+        grim "$file"
+        ;;
+      region|area|select)
+        capture_region
+        ;;
+      output|monitor)
+        capture_output
+        ;;
+      window|active)
+        capture_window
+        ;;
+      edit|swappy)
+        grim "$file"
+        swappy -f "$file" -o "$file" >/dev/null 2>&1 &
+        ;;
+      region-edit|area-edit|select-edit)
+        capture_region
+        swappy -f "$file" -o "$file" >/dev/null 2>&1 &
+        ;;
+      *)
+        printf 'usage: asura-screenshot [full|region|output|window|edit|region-edit]\n' >&2
+        exit 64
+        ;;
+    esac
+
+    copy_file
+    notify "Screenshot captured" "Saved and copied"$'\n'"$file"
+    printf '%s\n' "$file"
+  '';
+
   hyprmod = pkgs.callPackage ./hyprmod.nix { };
 in
 {
@@ -516,6 +635,7 @@ in
       mongodb-compass
       telegram-desktop
       ani-cli
+      asuraScreenshot
 
       # Terminal enhancements
       btop

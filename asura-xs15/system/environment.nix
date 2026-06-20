@@ -21,8 +21,6 @@ in
       XDG_SESSION_TYPE = "wayland";
       XDG_SESSION_DESKTOP = "Hyprland";
       XDG_SESSION_CLASS = "user";
-      # Accessibility support for keyboard input
-      GTK_MODULES = "gail:atk-bridge";
       NO_AT_BRIDGE = "0";
       PLAYWRIGHT_BROWSERS_PATH = "${playwrightBrowsers}";
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";

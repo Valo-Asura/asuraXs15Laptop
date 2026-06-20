@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_file="${XDG_STATE_HOME:-$HOME/.local/state}/asura-shell/current"
+profile="$(cat "$state_file" 2>/dev/null || printf noctalia)"
+
+caelestia_bin="@CAELESTIA_BIN@"
+dotfiles_path="@DOTFILES_QUICKSHELL_PATH@"
+ricelin_path="@RICELIN_QUICKSHELL_PATH@"
+tide_island_path="@TIDE_ISLAND_PATH@"
+asura_island_path="@ASURA_ISLAND_PATH@"
+noctalia_bin="@NOCTALIA_BIN@"
+
+notify() {
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -a asura-shell-launcher "$@" 2>/dev/null || true
+  fi
+}
+
+qs_call() {
+  local path="$1"
+  local target="$2"
+  local function="$3"
+  shift 3
+  qs ipc --any-display -p "$path" call "$target" "$function" "$@"
+}
+
+focused_monitor() {
+  if command -v hyprctl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    hyprctl monitors -j 2>/dev/null \
+      | jq -r '(.[] | select(.focused == true).name), .[0].name' 2>/dev/null \
+      | awk 'NF { print; exit }'
+    return 0
+  fi
+
+  printf '%s\n' "eDP-1"
+}
+
+open_caelestia() {
+  exec "$caelestia_bin" shell drawers toggle launcher
+}
+
+open_dotfiles() {
+  qs_call "$dotfiles_path" qsIpc toggleAppLauncher
+}
+
+open_ricelin() {
+  qs_call "$ricelin_path/pill" pill launcher "$(focused_monitor)"
+}
+
+open_tide_island() {
+  qs_call "$tide_island_path" tide toggleControlCenter
+}
+
+open_asura_island() {
+  qs_call "$asura_island_path" asuraIsland launcher
+}
+
+open_noctalia() {
+  exec "$noctalia_bin" msg panel-toggle launcher "$@"
+}
+
+open_waybar() {
+  notify "Waybar has no launcher" "Switch back with: asura-quickshell-switch noctalia"
+}
+
+case "$profile" in
+  dotfiles|dotfiles-quickshell)
+    open_dotfiles || {
+      notify "Dotfiles launcher failed" "Falling back to Noctalia."
+      open_noctalia "$@"
+    }
+    ;;
+  ricelin)
+    open_ricelin || {
+      notify "Ricelin launcher failed" "Falling back to Noctalia."
+      open_noctalia "$@"
+    }
+    ;;
+  caelestia|caelestia-hyprland)
+    open_caelestia || open_noctalia "$@"
+    ;;
+  tide-island|tide)
+    open_tide_island || open_noctalia "$@"
+    ;;
+  asura-island|island)
+    open_asura_island || open_noctalia "$@"
+    ;;
+  waybar)
+    open_waybar
+    ;;
+  noctalia|noctalia-v5|unknown)
+    open_noctalia "$@"
+    ;;
+  *)
+    if pgrep -u "$(id -u)" -af 'qs|quickshell' 2>/dev/null | grep -q "$dotfiles_path"; then
+      open_dotfiles
+    elif pgrep -u "$(id -u)" -af 'qs|quickshell' 2>/dev/null | grep -q "$ricelin_path"; then
+      open_ricelin
+    elif pgrep -u "$(id -u)" -af 'qs|quickshell' 2>/dev/null | grep -q "$asura_island_path"; then
+      open_asura_island
+    else
+      open_noctalia "$@"
+    fi
+    ;;
+esac

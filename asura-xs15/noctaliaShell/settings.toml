@@ -344,7 +344,7 @@ tooltip = "Recording Status"
 type = "custom_button"
 
 [widget.screenshot_btn]
-command = "noctalia msg screenshot-region"
+command = "asura-screenshot region"
 glyph = "camera"
 scale = 1.3500000000000001
 tooltip = "Take Region Screenshot"

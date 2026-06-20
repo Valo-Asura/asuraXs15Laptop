@@ -1,0 +1,138 @@
+{
+  "reload_style_on_change": true,
+  "layer": "top",
+  "position": "left",
+  "orientation": "vertical",
+  "exclusive": true,
+  "passthrough": false,
+  "width": 40,
+  "spacing": 10,
+  "margin-top": 8,
+  "margin-bottom": 8,
+  "margin-left": 0,
+
+  "modules-left": ["group/top"],
+  "modules-center": ["hyprland/workspaces"],
+  "modules-right": ["group/status", "clock"],
+
+  "group/top": {
+    "orientation": "vertical",
+    "modules": ["custom/menu", "wlr/taskbar"]
+  },
+
+  "group/status": {
+    "orientation": "vertical",
+    "modules": [
+      "tray",
+      "network",
+      "bluetooth",
+      "pulseaudio",
+      "backlight",
+      "group/battery"
+    ]
+  },
+
+  "custom/menu": {
+    "format": "",
+    "tooltip": false,
+    "on-click": "asura-shell-launcher"
+  },
+
+  "wlr/taskbar": {
+    "format": "{icon}",
+    "icon-size": 20,
+    "tooltip": true,
+    "on-click": "activate",
+    "on-click-middle": "close",
+    "active-first": true,
+    "sort-by-app-id": true,
+    "ignore-list": ["waybar"]
+  },
+
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      "active": " ",
+      "default": " ",
+      "empty": " "
+    },
+    "all-outputs": true,
+    "persistent-workspaces": {
+      "*": 5
+    },
+    "on-scroll-up": "hyprctl dispatch workspace e-1",
+    "on-scroll-down": "hyprctl dispatch workspace e+1"
+  },
+
+  "tray": {
+    "icon-size": 15,
+    "spacing": 6
+  },
+
+  "network": {
+    "format": "󰤭",
+    "format-disabled": "󰤭",
+    "format-disconnected": "󰤭",
+    "format-ethernet": "󰈀",
+    "format-wifi": "{icon}",
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)",
+    "on-click-right": "nm-connection-editor"
+  },
+
+  "bluetooth": {
+    "format": "󰂲",
+    "format-connected": "󰂯",
+    "format-off": "󰂲",
+    "tooltip": false
+  },
+
+  "pulseaudio": {
+    "format": "{icon}",
+    "format-muted": "󰖁",
+    "format-icons": {
+      "default": ["󰕿", "󰖀", "󰕾"]
+    },
+    "tooltip-format": "Volume {volume}%",
+    "on-click": "pavucontrol"
+  },
+
+  "backlight": {
+    "format": "󰃠\n{percent}",
+    "format-icons": ["󰃞", "󰃟", "󰃠"],
+    "tooltip-format": "Brightness {percent}%"
+  },
+
+  "group/battery": {
+    "orientation": "vertical",
+    "modules": ["battery#icon", "battery"]
+  },
+
+  "battery#icon": {
+    "states": {
+      "warning": 20,
+      "critical": 10
+    },
+    "full-at": 97,
+    "format": "{icon}",
+    "format-charging": "󰂄",
+    "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "interval": 5
+  },
+
+  "battery": {
+    "states": {
+      "warning": 20,
+      "critical": 10
+    },
+    "full-at": 97,
+    "format": "{capacity}",
+    "interval": 5,
+    "tooltip-format": "Battery {capacity}%"
+  },
+
+  "clock": {
+    "format": "{:%H\n%M}",
+    "tooltip-format": "{:%A, %d %B %Y}"
+  }
+}

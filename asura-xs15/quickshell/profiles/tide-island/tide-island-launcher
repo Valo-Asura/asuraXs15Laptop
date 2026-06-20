@@ -1,0 +1,8 @@
+#!/bin/bash
+# Launcher for Tide Island Quickshell component
+
+# Standard path for system installation. Use the config directory rather than
+# shell.qml so Hyprland's `qs ipc -p /usr/share/tide-island ...` targets the
+# same Quickshell instance.
+QML_PATH="/usr/share/tide-island"
+exec quickshell -p "$QML_PATH" "$@"

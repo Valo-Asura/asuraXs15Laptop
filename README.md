@@ -40,6 +40,7 @@ new commands should use `#asura-xs15`.
 |---|---|
 | Host | `asura-xs15` |
 | Desktop | Hyprland `v0.55.3` from the official Hyprland flake plus Noctalia v5 shell |
+| Optional shells | Caelestia, Ricelin, Dotfiles, Tide Island, and a left vertical pill Waybar profile are ported to the current Hyprland session through `asura-quickshell-switch`; MangoWM is removed |
 | Lockscreen | Noctalia IPC lock using `screenshots/lockscreen.png`; |
 | File manager | Nautilus default, PCManFM-Qt available, admin launchers/scripts, Xarchiver as the only archive UI |
 | Theme | Dark GTK/libadwaita settings, Papirus-Dark icons, Bibata Modern Amber cursor at 24 px |
@@ -81,6 +82,14 @@ xarchiver ARCHIVE             # open archives; Nautilus/PCManFM-Qt route archive
 asura-screen-record-toggle    # toggle wf-recorder into ~/Videos/Screenrecords
 asura-screen-record-toggle status
 asura-screen-record-toggle toggle-pause
+asura-screenshot full         # shell-independent screenshot for Print/features
+asura-screenshot region       # region screenshot; also copies to clipboard
+asura-quickshell-switch status # selected Noctalia/Quickshell profile and live shell processes
+asura-quickshell-switch noctalia # restore the stable Noctalia + Hyprland shell
+asura-quickshell-switch dotfiles # test imported Dotfiles Quickshell profile
+asura-quickshell-switch tide-island # test Tide Island dynamic-island profile
+asura-quickshell-switch waybar # test imported Waybar profile
+asura-shell-launcher          # profile-aware launcher used by SUPER+A; bare Super opens Noctalia launcher
 kdeconnect-app                # pair with phone; install KDE Connect on the S24 too
 kdeconnect-cli --list-devices # verify phone discovery/pairing from terminal
 hypr-kdeconnect-portal --self-test-motion 120 0 # verify laptop pointer injection after login
@@ -101,6 +110,8 @@ ASURA_SKIP_FASTFETCH=1 foot   # skip the automatic fastfetch banner for one term
 │   ├── plymouth/           # Local Plymouth theme source
 │   ├── hyprland/           # Nix-owned Hyprland config, rules, keybinds
 │   ├── noctaliaShell/      # Noctalia settings and shell-managed app defaults
+│   ├── quickshell/         # Optional Hyprland Quickshell profiles and switcher
+│   ├── waybar/             # Optional imported Waybar profile
 │   ├── scripts/            # Home Manager helper scripts
 │   ├── vibewallREzero/     # Native C++23 wallpaper picker/daemon package
 │   └── system/             # Flat one-file NixOS host modules
@@ -139,8 +150,8 @@ ASURA_SKIP_FASTFETCH=1 foot   # skip the automatic fastfetch banner for one term
 ```
 
 Rule: one-file modules stay as `.nix` files. Folders are only for real
-multi-file domains such as `hyprland/`, `noctaliaShell/`, `scripts/`,
-`vibewallREzero/`, `browser/`, and `plymouth/`.
+multi-file domains such as `hyprland/`, `noctaliaShell/`, `quickshell/`,
+`scripts/`, `vibewallREzero/`, `browser/`, and `plymouth/`.
 
 ## Docs
 
@@ -148,6 +159,8 @@ multi-file domains such as `hyprland/`, `noctaliaShell/`, `scripts/`,
 |---|---|
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | Rebuild, fan, theme, and repo safety checks |
 | [`docs/WALLPAPER.md`](docs/WALLPAPER.md) | `SUPER+W`, vibewallREzero, Noctalia IPC image apply, and mpvpaper video apply |
+| [`docs/QUICKSHELL_PROFILES.md`](docs/QUICKSHELL_PROFILES.md) | Optional Hyprland Quickshell profiles and switch commands |
+| [`docs/SHELL_BENCHMARKS.md`](docs/SHELL_BENCHMARKS.md) | Hyprland/Noctalia and historical Mango comparison numbers |
 
 ## Previous Config References
 
@@ -231,6 +244,10 @@ Important carry-overs:
   It supports `status`, `toggle-pause`, `resume`, and elapsed-time
   notifications, and it adopts/stops any live `wf-recorder` owned by this user
   if the PID file is stale.
+- Screenshots are handled by the shell-independent `asura-screenshot` wrapper.
+  `Print` captures the visible workspace immediately, including open shell
+  panels/launchers; `Shift+Print` selects a region; both save under
+  `~/Pictures/Screenshots` and copy the PNG to the clipboard.
 - KDE Connect is enabled through `programs.kdeconnect`, which installs the KDE
   Connect app/CLI and opens TCP/UDP 1714-1764 for LAN discovery. Phone-to-PC
   mouse control needs the RemoteDesktop portal on Hyprland, so this config pins
@@ -250,8 +267,9 @@ Important carry-overs:
 - The `rescue-no-nvidia` boot specialization keeps the old rescue path
   declarative: multi-user target, Plymouth disabled, and temporary NVIDIA
   blacklist only for that entry.
-- Lockscreen, wallpaper, launcher, screenshots, clipboard, and session actions
-  route through Noctalia IPC.
+- Lockscreen, wallpaper, launcher, clipboard, and session actions route through
+  Noctalia IPC. Screenshots intentionally bypass shell IPC so proof captures
+  keep working while optional shells or open panels are visible.
 - Wofi and Hyprlock are not active modules.
 - Chromium-family XDM integration uses the bundled extension folder at
   `/opt/xdman/chrome-extension`, local desktop launchers add

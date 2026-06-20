@@ -33,5 +33,6 @@
     ./fan-control-tools.nix
     ./power-management-tools.nix
     ./vibewall.nix
+    ../quickshell
   ];
 }

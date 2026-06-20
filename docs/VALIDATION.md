@@ -34,6 +34,8 @@ command -v xdm-open
 command -v codex
 command -v asura-screen-record-toggle
 asura-screen-record-toggle status
+command -v asura-screenshot
+grep -n 'Print.*asura-screenshot full' /etc/nixos/asura-xs15/hyprland/bindings.nix
 command -v kdeconnect-app
 command -v kdeconnect-cli
 command -v hypr-kdeconnect-portal
@@ -120,6 +122,7 @@ Expected values:
 | XDM browser helper | `/opt/xdman/chrome-extension` exists; Brave/Chrome/Chromium launchers load it |
 | XDM browser monitor | `xdman.service` is not enabled at boot; browser extension/protocol handlers remain installed and `xdm-open` starts XDM on demand |
 | Screen recorder | `asura-screen-record-toggle` exists; Noctalia left quick-actions and `SUPER+SHIFT+R` call it; `status` shows elapsed state, `toggle-pause` pauses/resumes, and stale PID files do not start duplicate captures |
+| Screenshot helper | `asura-screenshot` exists; plain `Print` captures the visible workspace immediately without Noctalia IPC, so open shell panels/launchers are included in proof screenshots |
 | KDE Connect | `programs.kdeconnect` enabled; `kdeconnect-app` and `kdeconnect-cli` installed; NixOS module opens TCP/UDP 1714-1764 |
 | KDE Connect remote input | `kdeconnectd` starts from Hyprland; `hypr-kdeconnect-portal` exists; `org.freedesktop.impl.portal.RemoteDesktop` is routed to `hypr-kdeconnect`; phone touchpad can move the laptop pointer |
 | Android recovery tools | `adb`, `fastboot`, `heimdall`, `scrcpy`, `jmtpfs`, and `mtpfs` are installed; USB device ACLs are handled by systemd uaccess |

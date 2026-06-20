@@ -63,7 +63,8 @@ let
 
     ## Desktop Shell Context
     - Active stable shell: `/etc/nixos/asura-xs15/noctaliaShell` (Noctalia).
-    - Hyprland lock, screenshot, clipboard, wallpaper, launcher, and session actions should route through Noctalia IPC.
+    - Hyprland lock, clipboard, wallpaper, launcher, and session actions should route through Noctalia IPC.
+    - Screenshots should use `asura-screenshot` instead of shell IPC so feature proof captures work while panels/launchers are open or optional shells are active.
     - Keep NVIDIA persistenced enabled so monitor/NVML tools can see the dGPU while idle.
     - Removed shell experiments should not be reintroduced without an explicit user request.
   '';
@@ -418,7 +419,7 @@ let
         shell_lesson = {
             "topic": "Desktop Shell Workflow",
             "lesson": "Keep Noctalia as the single active desktop shell unless the user explicitly asks for another shell.",
-            "solution": "Route lock, screenshot, clipboard, wallpaper, launcher, and session actions through Noctalia IPC and keep unrelated shell experiments out of active imports.",
+            "solution": "Route lock, clipboard, wallpaper, launcher, and session actions through Noctalia IPC, but keep screenshots on the shell-independent asura-screenshot helper so proof captures include open panels and optional shells.",
         }
         if shell_lesson not in lessons:
             lessons.append(shell_lesson)
@@ -428,7 +429,7 @@ let
         mkdir(DB.parent)
         conn = sqlite3.connect(DB)
         try:
-            content = "Desktop shell update: Noctalia is the selected active shell; lock, screenshot, clipboard, wallpaper, launcher, and session keybinds should route through Noctalia IPC."
+            content = "Desktop shell update: Noctalia is the selected active shell; lock, clipboard, wallpaper, launcher, and session keybinds should route through Noctalia IPC. Screenshots use asura-screenshot so captures work while panels or optional shells are open."
             exists = conn.execute(
                 "SELECT 1 FROM memories WHERE kind = ? AND source = ? AND content = ? LIMIT 1",
                 ("fact", "nixos-home-manager", content),

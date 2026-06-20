@@ -25,7 +25,6 @@ let
     "asura-apply-cursor-theme"
     "asura-monitor-guard --daemon"
     "easyeffects --gapplication-service"
-    "nautilus --gapplication-service"
   ];
 
   # Old hand-written Lua config paths. These are not active config; Home
